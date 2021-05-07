@@ -1,0 +1,10 @@
+﻿{
+  "name": "Refightilization",
+  "version_number": "1.0.0",
+  "website_url": "",
+  "description": "Allows players to respawn as a monster when they die.",
+  "dependencies": [
+    "bbepis-BepInExPack-5.3.1",
+    "tristanmcpherson-R2API-3.0.30"
+  ]
+}
