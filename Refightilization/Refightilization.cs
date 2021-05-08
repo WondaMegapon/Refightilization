@@ -306,6 +306,7 @@ namespace Wonda
             Logger.LogInfo("Reset player prefabs!");
         }
 
+        // A cheap and dirty way of checking to see if a string is in the blacklist.
         private bool CheckBlacklist(string name)
         {
             bool flag = false;
