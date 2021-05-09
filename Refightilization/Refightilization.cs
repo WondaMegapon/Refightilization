@@ -1,10 +1,12 @@
 ﻿using BepInEx;
 using RoR2;
+using R2API.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Wonda
 {
+    [NetworkCompatibility(CompatibilityLevel.NoNeedForSync)]
     [BepInDependency("com.bepis.r2api", BepInDependency.DependencyFlags.HardDependency)]
     [BepInPlugin(guid, modName, version)]
     public class Refightilization : BaseUnityPlugin
@@ -15,7 +17,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.0";
+        const string version = "1.0.2";
 
         // Config
         private RefightilizationConfig _config;
@@ -159,7 +161,7 @@ namespace Wonda
             {
                 if (player == null)
                 {
-                    playerStorage.Remove(player); // This was quickly spledged in and is untested. It'll probably break *everything* if a player leaves mid-game.
+                    playerStorage.Remove(player); // This was quickly spledged in and is untested. It'll probably break *everything* if a player leaves mid-game... It probably does already.
                     continue;
                 }
 
@@ -194,11 +196,18 @@ namespace Wonda
         {
             Logger.LogInfo("Attempting player respawn!");
 
+            // Apparently there's an NRE that can happen within this method, so I'm prepping for that possible event.
+            if(player == null)
+            {
+                Logger.LogError("Player is null!? Aborting Respawn.");
+                return;
+            }
+
             // Grabbing a random spawncard from the monster selection.
             SpawnCard monsterCard = ClassicStageInfo.instance.monsterSelection.Evaluate(Random.Range(0f, 1f)).spawnCard;
             if(monsterCard == null)
             {
-                Logger.LogError("Spawn card is null!");
+                Logger.LogError("Spawn card is null! Retrying Respawn.");
                 Respawn(player);
                 return;
             }
@@ -207,7 +216,7 @@ namespace Wonda
             GameObject randomMonster = BodyCatalog.FindBodyPrefab(monsterCard.prefab.name.Replace("Master", "Body"));
             if (randomMonster == null)
             {
-                Logger.LogError("Random monster is null!");
+                Logger.LogError("Random monster is null! Retrying Respawn.");
                 Respawn(player);
                 return;
             }
@@ -215,7 +224,7 @@ namespace Wonda
             // Checking to see if the configuration has disabled the selected monster.
             if ((randomMonster.GetComponent<CharacterBody>().isChampion && !_config.AllowBosses) || (randomMonster.name == "ScavengerBody" && !_config.AllowScavengers) || (CheckBlacklist(randomMonster.name)))
             {
-                Logger.LogInfo(randomMonster.name + " is disabled!");
+                Logger.LogInfo(randomMonster.name + " is disabled! Retrying Respawn.");
                 Respawn(player);
                 return;
             }

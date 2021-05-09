@@ -1,8 +1,4 @@
-﻿# Info
-
-Allows players to respawn as a monster when they die. Highly configurable.
-
-It's recommended to also have [Unmodded Version](https://thunderstore.io/package/frostycpu/UnmoddedVersion/) installed to avoid having clients install the mod to join the server, but its not required.
+﻿Allows players to respawn as a monster when they die. Highly configurable.
 
 ## Configuring for Single Player
 
@@ -20,7 +16,8 @@ If you ever want to mess with this mod while in single player, there are some co
 
 # Issues
 
-None known at the moment.
+- As always, NullReferenceExceptions can occur and possibly break all sorts of systems.
+- There is an edge-case where players can dupe items. *Please* contact me with your logs if it happens.
 
 # Contact
 
@@ -35,6 +32,8 @@ Thanks to Fantab and Loke for inspiring this project to exist.
 Thanks to Cebe, Joe, JC, and PurpleKid for helping me test this mod out.
 
 # Changelog
+
+1.0.2 - Caught some NREs, fixed R2API dependencies.
 
 1.0.1 - Updated README to provide some useful hints for using the mod.
 
