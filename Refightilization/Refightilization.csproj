@@ -11,6 +11,9 @@
     <Reference Include="0Harmony20">
       <HintPath>..\..\..\..\AppData\Roaming\r2modmanPlus-local\RiskOfRain2\profiles\Debug\BepInEx\core\0Harmony20.dll</HintPath>
     </Reference>
+    <Reference Include="AncientScepter">
+      <HintPath>bin\Debug\netstandard2.0\AncientScepter.dll</HintPath>
+    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Risk of Rain 2\Risk of Rain 2_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
@@ -22,6 +25,9 @@
     </Reference>
     <Reference Include="BepInEx.Preloader">
       <HintPath>..\..\..\..\AppData\Roaming\r2modmanPlus-local\RiskOfRain2\profiles\Debug\BepInEx\core\BepInEx.Preloader.dll</HintPath>
+    </Reference>
+    <Reference Include="ClassicItems">
+      <HintPath>bin\Debug\netstandard2.0\ClassicItems.dll</HintPath>
     </Reference>
     <Reference Include="HarmonyXInterop">
       <HintPath>..\..\..\..\AppData\Roaming\r2modmanPlus-local\RiskOfRain2\profiles\Debug\BepInEx\core\HarmonyXInterop.dll</HintPath>
@@ -47,8 +53,14 @@
     <Reference Include="MonoMod.Utils">
       <HintPath>..\..\..\..\AppData\Roaming\r2modmanPlus-local\RiskOfRain2\profiles\Debug\BepInEx\core\MonoMod.Utils.dll</HintPath>
     </Reference>
+    <Reference Include="MonsterVariants">
+      <HintPath>bin\Debug\netstandard2.0\MonsterVariants.dll</HintPath>
+    </Reference>
     <Reference Include="R2API">
       <HintPath>..\..\..\..\AppData\Roaming\r2modmanPlus-local\RiskOfRain2\profiles\Debug\BepInEx\plugins\tristanmcpherson-R2API\R2API\R2API.dll</HintPath>
+    </Reference>
+    <Reference Include="TILER2">
+      <HintPath>bin\Debug\netstandard2.0\TILER2.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Risk of Rain 2\Risk of Rain 2_Data\Managed\UnityEngine.dll</HintPath>
