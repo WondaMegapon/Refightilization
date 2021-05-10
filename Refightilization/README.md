@@ -20,7 +20,6 @@ If you ever want to mess with this mod while in single player, there are some co
 
 # Issues
 
-- Soft incompatibility with Ancient Scepter, players holding an Ancient Scepter would have it rerolled upon respawning.
 - Artifact of Metamorphosis will spawn you as a random survivor as opposed to a random monster.
 
 # Contact
@@ -35,9 +34,11 @@ Thanks to Fantab and Loke for inspiring this project to exist.
 
 Thanks to Cebe, Joe, JC, and PurpleKid for helping me test this mod out prior to release.
 
-Thanks to Lux and Gaforb for providing tons of feedback to help make this mod better.
+Thanks to Lux, EnderGrimm and Gaforb for providing tons of feedback to help make this mod better.
 
 # Changelog
+
+1.0.4 - Fixed compatibility with Classic Items and Standalone Ancient Scepter, and added config for Aspects.
 
 1.0.3 - Added item configs, added config for Monster Variants, added scaling respawn timer, prevented respawning as a recently spawned monster, caught bugs regarding disabling the mod, adjusted spawning to prevent softlocks, altered Affix code to give players Elite Aspects instead of buffing them, adjusted spawning to prevent being unable to pick up items, added functionality with some artifacts.
 

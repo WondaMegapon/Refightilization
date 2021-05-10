@@ -25,6 +25,7 @@ namespace Wonda
         private readonly ConfigEntry<bool> _removeMonsterVariantItems;
         private readonly ConfigEntry<bool> _removeAllItems;
         private readonly ConfigEntry<bool> _returnItemsOnStageChange;
+        private readonly ConfigEntry<bool> _takeAffix;
 
         private readonly ConfigEntry<bool> _endGameWhenEverybodyDead;
         private readonly ConfigEntry<bool> _forceItemRestoration;
@@ -48,6 +49,7 @@ namespace Wonda
         public bool RemoveMonsterVariantItems { get => _removeMonsterVariantItems.Value; }
         public bool RemoveAllItems { get => _removeAllItems.Value; }
         public bool ReturnItemsOnStageChange { get => _returnItemsOnStageChange.Value; }
+        public bool TakeAffix { get => _takeAffix.Value; }
 
         public bool EndGameWhenEverybodyDead { get => _endGameWhenEverybodyDead.Value; }
         public bool ForceItemRestoration { get => _forceItemRestoration.Value; }
@@ -73,6 +75,8 @@ namespace Wonda
             _removeMonsterVariantItems = config.Bind("Item Settings", "RemoveMonsterVariantItems", true, "Will remove items given to players by Monster Variants on respawn.");
             _removeAllItems = config.Bind("Item Settings", "RemoveAllItems", false, "Will remove all items in a player's inventory when they respawn.");
             _returnItemsOnStageChange = config.Bind("Item Settings", "ReturnItemsOnStageChange", true, "If RemoveAllItems is enabled, will allow removed items to be returned when the stage changes.");
+            _takeAffix = config.Bind("Item Settings", "TakeAffix", true, "Will take away granted affixes upon respawning.");
+
             _forceItemRestoration = config.Bind("Item Settings", "ForceItemRestoration", false, "Will reset a player's inventory to the state it was before they died. (Overrides ReturnItemsOnStageChange.)");
 
             _endGameWhenEverybodyDead = config.Bind("Debug", "EndGameWhenEverybodyDead", true, "Ends the round when everybody is dead. (Keep this on.)");

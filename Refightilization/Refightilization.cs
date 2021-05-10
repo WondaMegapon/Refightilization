@@ -16,7 +16,7 @@ namespace Wonda
     [BepInDependency("com.rob.MonsterVariants", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.ThinkInvisible.TILER2", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.ThinkInvisible.ClassicItems", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency("com.amogus_lovers.StandaloneAncientScepter", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.DestroyedClone.AncientScepter", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin(guid, modName, version)]
     public class Refightilization : BaseUnityPlugin
     {
@@ -26,7 +26,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.3";
+        const string version = "1.0.4";
 
         // Config
         private RefightilizationConfig _config;
@@ -44,6 +44,7 @@ namespace Wonda
             public bool isDead;
             public Inventory inventory;
             public bool giftedAffix;
+            public bool hadAncientScepter;
         }
 
         // The actual class to use.
@@ -64,7 +65,7 @@ namespace Wonda
         {
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.rob.MonsterVariants", out var monsterVariantsPlugin)) _monsterVariants = monsterVariantsPlugin;
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.ThinkInvisible.ClassicItems", out var classicItemsPlugin)) _classicItems = classicItemsPlugin;
-            if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.amogus_lovers.StandaloneAncientScepter", out var standaloneAncientScepterPlugin)) _standaloneAncientScepter = standaloneAncientScepterPlugin;
+            if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.DestroyedClone.AncientScepter", out var standaloneAncientScepterPlugin)) _standaloneAncientScepter = standaloneAncientScepterPlugin;
         }
 
         // Hook setup.
@@ -305,13 +306,11 @@ namespace Wonda
             // Is the Artifact of Metamorphosis enabled?
             if(metamorphosIsEnabled && player.inventory.GetItemCount(RoR2Content.Items.InvadingDoppelganger) <= 0) player.inventory.GiveItem(RoR2Content.Items.InvadingDoppelganger);
 
-            // Does the body have an AncientScepter skill?
-            /*
+            // Do we have an Ancient Scepter?
             if (_classicItems != null)
-                FixScepterSkillCI(randomMonster);
+                TakeScepterCI(player);
             if (_standaloneAncientScepter != null)
-                FixScepterSkillSAS(randomMonster);
-            */
+                TakeScepterSAS(player);
 
             // Assigning the player to the selected monster prefab.
             player.bodyPrefab = randomMonster;
@@ -375,7 +374,7 @@ namespace Wonda
                         break;
                 }
                 player.inventory.SetEquipmentIndex(selectedBuff);
-                FindPlayerStorage(player).giftedAffix = true;
+                FindPlayerStorage(player).giftedAffix = _config.TakeAffix;
             }
 
             // Broadcasting it to everyone.
@@ -410,6 +409,11 @@ namespace Wonda
                     }
 
                     if (metamorphosIsEnabled && player.inventory.GetItemCount(RoR2Content.Items.InvadingDoppelganger) > 0) player.inventory.RemoveItem(RoR2Content.Items.InvadingDoppelganger);
+
+                    if (_classicItems != null)
+                        GiveScepterCI(player.master);
+                    if (_standaloneAncientScepter != null)
+                        GiveScepterSAS(player.master);
 
                     if (_config.RemoveAllItems && _config.ReturnItemsOnStageChange) player.master.inventory.AddItemsFrom(player.inventory);
                     if (_config.ForceItemRestoration) player.master.inventory.CopyItemsFrom(player.inventory);
@@ -508,41 +512,53 @@ namespace Wonda
             }
         }
 
-        /*
-        // This one is for Classic Items. Squeezes in a fake skill that halves recharge time.
+        
+        // This one is for Classic Items. It takes the player's Scepter.
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        private void FixScepterSkillCI(GameObject monster)
+        private void TakeScepterCI(CharacterMaster player)
         {
-            Logger.LogInfo("Generating skill for " + monster.name);
-
-            GenericSkill baseSkill = monster.GetComponent<GenericSkill>();
-
-            if(baseSkill)
+            if(player.inventory.GetItemCount(ThinkInvisible.ClassicItems.Scepter.instance.itemDef) > 0)
             {
-                Logger.LogInfo("Monster Skill located!");
-
-                if (_classicItems != null)
-                {
-                    ThinkInvisible.ClassicItems.Scepter.instance.RegisterScepterSkill(baseSkill.skillDef, monster.name, SkillSlot.Primary, 0);
-                    Logger.LogInfo("Skill for " + monster.name + " registered!");
-                }                
+                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " has a Scepter. Taking it.");
+                FindPlayerStorage(player).hadAncientScepter = true;
+                player.inventory.RemoveItem(ThinkInvisible.ClassicItems.Scepter.instance.itemDef);
             }
-            else
+        }
+
+        // This one is for Classic Items. It gives the player's Scepter.
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        private void GiveScepterCI(CharacterMaster player)
+        {
+            if(FindPlayerStorage(player).hadAncientScepter)
             {
-                Logger.LogError("Monster missing Skill Locator!");
-            }            
+                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " had a Scepter. Returning it.");
+                player.inventory.GiveItem(ThinkInvisible.ClassicItems.Scepter.instance.itemDef);
+                FindPlayerStorage(player).hadAncientScepter = false;
+            }
         }
 
         // This one is for Standalone AS. Same as before.
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        private void FixScepterSkillSAS(GameObject monster)
+        private void TakeScepterSAS(CharacterMaster player)
         {
-            RoR2.Skills.SkillDef newSkill = monster.GetComponent<CharacterBody>().skillLocator.GetSkill(SkillSlot.Primary).skillDef;
-            newSkill.baseRechargeInterval /= 2;
+            if (player.inventory.GetItemCount(AncientScepter.AncientScepterItem.instance.ItemDef) > 0)
+            {
+                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " has a Scepter. Taking it.");
+                FindPlayerStorage(player).hadAncientScepter = true;
+                player.inventory.RemoveItem(AncientScepter.AncientScepterItem.instance.ItemDef);
+            }
+        }
 
-            if (_standaloneAncientScepter != null)
-                AncientScepter.AncientScepterItem.instance.RegisterScepterSkill(newSkill, monster.name, SkillSlot.Primary, 0);
-        
-        }*/
+        // This one is for Standalone AS. Same as before.
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        private void GiveScepterSAS(CharacterMaster player)
+        {
+            if (FindPlayerStorage(player).hadAncientScepter)
+            {
+                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " had a Scepter. Returning it.");
+                player.inventory.GiveItem(AncientScepter.AncientScepterItem.instance.ItemDef);
+                FindPlayerStorage(player).hadAncientScepter = false;
+            }
+        }
     }    
 }
