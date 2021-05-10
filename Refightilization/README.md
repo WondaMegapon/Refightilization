@@ -21,6 +21,7 @@ If you ever want to mess with this mod while in single player, there are some co
 # Issues
 
 - Artifact of Metamorphosis will spawn you as a random survivor as opposed to a random monster.
+- [BetterUI](https://thunderstore.io/package/XoXFaby/BetterUI/), [Busted Diabolo Strike](https://thunderstore.io/package/farofus/Captain_Busted_Diablo_Strike/), and [Bandit Tweaks](https://thunderstore.io/package/Moffein/Bandit_Tweaks/) will flood the console when the player respawns. Seemingly does nothing else.
 
 # Contact
 
@@ -37,6 +38,8 @@ Thanks to Cebe, Joe, JC, and PurpleKid for helping me test this mod out prior to
 Thanks to Lux, EnderGrimm and Gaforb for providing tons of feedback to help make this mod better.
 
 # Changelog
+
+1.0.5 - Updated Readme, attempted to fix Monster Variant compatibility, and adjusted player teleporter interactions.
 
 1.0.4 - Fixed compatibility with Classic Items and Standalone Ancient Scepter, and added config for Aspects.
 

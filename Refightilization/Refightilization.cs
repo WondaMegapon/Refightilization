@@ -26,7 +26,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.4";
+        const string version = "1.0.5";
 
         // Config
         private RefightilizationConfig _config;
@@ -80,6 +80,7 @@ namespace Wonda
             On.RoR2.Run.OnUserAdded += Run_OnUserAdded;
             On.RoR2.TeleporterInteraction.OnInteractionBegin += TeleporterInteraction_OnInteractionBegin;
             On.RoR2.GenericPickupController.AttemptGrant += GenericPickupController_AttemptGrant;
+            On.RoR2.Run.BeginGameOver += Run_BeginGameOver;
         }
 
         private void Run_Start(On.RoR2.Run.orig_Start orig, Run self)
@@ -93,6 +94,8 @@ namespace Wonda
 
         private void GlobalEventManager_OnPlayerCharacterDeath(On.RoR2.GlobalEventManager.orig_OnPlayerCharacterDeath orig, GlobalEventManager self, DamageReport damageReport, NetworkUser victimNetworkUser)
         {
+            
+            if (_config.EnableRefightilization && _monsterVariants != null) RemoveMonsterVariantItems(victimNetworkUser.master); // Was player previously a monster variant? Gotta take away those items if the server owner wants that.
             orig(self, damageReport, victimNetworkUser);
             if(!_config.EnableRefightilization) return;
             StartCoroutine(RespawnCheck(victimNetworkUser.master.transform.position)); // Spawning in players shortly after a delay.
@@ -121,7 +124,7 @@ namespace Wonda
                 foreach (PlayerStorage player in playerStorage)
                 {
                     if (self.isCharged && _monsterVariants != null) RemoveMonsterVariantItems(player.master);
-                    if (player.master.GetBody().gameObject == activator.gameObject && player.isDead && playerStorage.Count > 1) return; // If there's multiple players, then dead ones won't be able to activate the teleporter.
+                    if (player.master.GetBody().gameObject == activator.gameObject && player.isDead && player.master.teamIndex != TeamIndex.Player && playerStorage.Count > 1) return; // If there's multiple players, then dead ones won't be able to activate the teleporter.
                 }
             }
             orig(self, activator);
@@ -144,6 +147,12 @@ namespace Wonda
                 }
             }
             else orig(self, body);
+        }
+
+        private void Run_BeginGameOver(On.RoR2.Run.orig_BeginGameOver orig, Run self, GameEndingDef gameEndingDef)
+        {
+            StopCoroutine(RespawnCheck());
+            orig(self, gameEndingDef);
         }
 
         // Beginning the *actual* custom code.
@@ -256,9 +265,7 @@ namespace Wonda
                 return;
             }
 
-            // Was player previously a monster variant? Gotta take away those items if the server owner wants that.
-            if(_monsterVariants != null)
-                RemoveMonsterVariantItems(player);
+            
 
             // Was this player assigned an affix by us?
             if(FindPlayerStorage(player).giftedAffix)
@@ -483,9 +490,7 @@ namespace Wonda
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void RemoveMonsterVariantItems(CharacterMaster player)
         {
-            if (_monsterVariants == null) return;
-
-            if (player != null && player.GetBody().GetComponent<MonsterVariants.Components.VariantHandler>() && player.GetBody().GetComponent<MonsterVariants.Components.VariantHandler>().isVariant && _config.RemoveMonsterVariantItems)
+            if (player != null && player.GetBody() && player.GetBody().GetComponent<MonsterVariants.Components.VariantHandler>() && player.GetBody().GetComponent<MonsterVariants.Components.VariantHandler>().isVariant && _config.RemoveMonsterVariantItems)
             {
                 Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " is a Monster Variant. Attempting to remove their items.");
 

@@ -69,7 +69,7 @@ namespace Wonda
             _respawnDamageMultiplier = config.Bind("Respawn Settings", "RespawnDamageMultiplier", 5f, "Multiplies the damage a player spawns with.");
             _respawnMoneyMultiplier = config.Bind("Respawn Settings", "RespawnMoneyMultiplier", 1.1f, "Multiplies the money rewarded for killing a player.");
             _respawnAffixChance = config.Bind("Respawn Settings", "RespawnAffixChance", 60f, "Sets the chance that a respawned player will have an affix.");
-            _additionalRespawnTime = config.Bind("Respawn Settings", "AdditionalRespawnTime", 0.5f, "Sets how much respawn time will increase per player death. This will effect everyone.");
+            _additionalRespawnTime = config.Bind("Respawn Settings", "AdditionalRespawnTime", 0.25f, "Sets how much respawn time will increase per player death. This will effect everyone.");
 
             _itemPickupToggle = config.Bind("Item Settings", "ItemPickupToggle", true, "Allows monster players to pick up items off the ground. (Disabling won't work if RespawnTeam is set to 1.)");
             _removeMonsterVariantItems = config.Bind("Item Settings", "RemoveMonsterVariantItems", true, "Will remove items given to players by Monster Variants on respawn.");
