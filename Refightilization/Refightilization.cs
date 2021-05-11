@@ -3,6 +3,7 @@ using RoR2;
 using RoR2.Navigation;
 using R2API.Utils;
 using MonsterVariants;
+using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -81,6 +82,7 @@ namespace Wonda
             On.RoR2.TeleporterInteraction.OnInteractionBegin += TeleporterInteraction_OnInteractionBegin;
             On.RoR2.GenericPickupController.AttemptGrant += GenericPickupController_AttemptGrant;
             On.RoR2.Run.BeginGameOver += Run_BeginGameOver;
+            On.RoR2.CharacterMaster.Respawn += CharacterMaster_Respawn;
         }
 
         private void Run_Start(On.RoR2.Run.orig_Start orig, Run self)
@@ -98,6 +100,14 @@ namespace Wonda
             if (_config.EnableRefightilization && _monsterVariants != null) RemoveMonsterVariantItems(victimNetworkUser.master); // Was player previously a monster variant? Gotta take away those items if the server owner wants that.
             orig(self, damageReport, victimNetworkUser);
             if(!_config.EnableRefightilization) return;
+            if(_config.MurderRevive && FindPlayerStorage(damageReport.attackerMaster) != null && FindPlayerStorage(damageReport.attackerMaster).isDead && FindPlayerStorage(damageReport.victimMaster) != null && !FindPlayerStorage(damageReport.victimMaster).isDead)
+            {
+                CleanPlayer(FindPlayerStorage(damageReport.attackerMaster));
+                damageReport.attackerMaster.RespawnExtraLife();
+                damageReport.attackerMaster.inventory.RemoveItem(RoR2Content.Items.ExtraLifeConsumed);
+
+                Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cWorldEvent><sprite name=\"Skull\" tint=1> " + damageReport.attackerMaster.playerCharacterMasterController.networkUser.userName + " has killed " + damageReport.victimMaster.playerCharacterMasterController.networkUser.userName + "! They will live again! <sprite name=\"Skull\" tint=1></style>" });
+            }
             StartCoroutine(RespawnCheck(victimNetworkUser.master.transform.position)); // Spawning in players shortly after a delay.
             respawnTime += _config.AdditionalRespawnTime;
         }
@@ -151,8 +161,21 @@ namespace Wonda
 
         private void Run_BeginGameOver(On.RoR2.Run.orig_BeginGameOver orig, Run self, GameEndingDef gameEndingDef)
         {
-            StopCoroutine(RespawnCheck());
+            if(_config.EnableRefightilization) StopCoroutine(RespawnCheck());
             orig(self, gameEndingDef);
+        }
+
+        private CharacterBody CharacterMaster_Respawn(On.RoR2.CharacterMaster.orig_Respawn orig, CharacterMaster self, Vector3 footPosition, Quaternion rotation)
+        {
+            if (_config.EnableRefightilization)
+            {
+                string currMethod = new StackFrame(2).GetMethod().Name;
+                if (currMethod != "RefightRespawn" && (FindPlayerStorage(self) != null))
+                {
+                    self.bodyPrefab = FindPlayerStorage(self).origPrefab;
+                }
+            }
+            return orig(self, footPosition, rotation);
         }
 
         // Beginning the *actual* custom code.
@@ -233,7 +256,7 @@ namespace Wonda
                         player.inventory.CopyItemsFrom(player.master.inventory);
                         if (_config.RemoveAllItems) player.master.inventory.CopyItemsFrom(new Inventory());
                     }
-                    Respawn(player.master, deathPos); // Begin respawning the player.
+                    RefightRespawn(player.master, deathPos); // Begin respawning the player.
                 }
                 else
                 {
@@ -243,7 +266,7 @@ namespace Wonda
             }
 
             Logger.LogInfo("Checking players complete.");
-            if (isEverybodyDead && _config.EndGameWhenEverybodyDead)
+            if (isEverybodyDead && !(TeleporterInteraction.instance != null && TeleporterInteraction.instance.isInFinalSequence) && _config.EndGameWhenEverybodyDead)
             {
                 Logger.LogInfo("Everybody is dead. Forcibly ending the game.");
                 ResetPrefabs();
@@ -254,7 +277,7 @@ namespace Wonda
         }
 
         // Respawning that player.
-        private void Respawn(CharacterMaster player, Vector3 deathPos)
+        private void RefightRespawn(CharacterMaster player, Vector3 deathPos)
         {
             Logger.LogInfo("Attempting player respawn!");
 
@@ -264,8 +287,7 @@ namespace Wonda
                 Logger.LogError("Player is null!? Aborting Respawn.");
                 return;
             }
-
-            
+                      
 
             // Was this player assigned an affix by us?
             if(FindPlayerStorage(player).giftedAffix)
@@ -279,7 +301,7 @@ namespace Wonda
             if(monsterCard == null)
             {
                 Logger.LogError("Spawn card is null! Retrying Respawn.");
-                Respawn(player, deathPos);
+                RefightRespawn(player, deathPos);
                 return;
             }
 
@@ -288,7 +310,7 @@ namespace Wonda
             if (randomMonster == null)
             {
                 Logger.LogError("Random monster is null! Retrying Respawn.");
-                Respawn(player, deathPos);
+                RefightRespawn(player, deathPos);
                 return;
             }
 
@@ -296,7 +318,7 @@ namespace Wonda
             if ((randomMonster.GetComponent<CharacterBody>().isChampion && !_config.AllowBosses) || (randomMonster.name == "ScavengerBody" && !_config.AllowScavengers) || (CheckBlacklist(randomMonster.name) && ClassicStageInfo.instance.monsterSelection.Count > 1))
             {
                 Logger.LogInfo(randomMonster.name + " is disabled! Retrying Respawn.");
-                Respawn(player, deathPos);
+                RefightRespawn(player, deathPos);
                 return;
             }
 
@@ -304,7 +326,7 @@ namespace Wonda
             if (randomMonster.name == player.bodyPrefab.name)
             {
                 Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was already " + randomMonster.name + ". Retrying Respawn.");
-                Respawn(player, deathPos);
+                RefightRespawn(player, deathPos);
                 return;
             }
 
@@ -403,36 +425,36 @@ namespace Wonda
             // Iterating through every player and set all the things we've changed back.
             foreach (PlayerStorage player in playerStorage)
             {
-                if(player.isDead)
-                {
-                    player.master.bodyPrefab = player.origPrefab;
-                    player.master.preventGameOver = true;
-                    player.master.teamIndex = TeamIndex.Player;
-
-                    if (player.giftedAffix)
-                    {
-                        player.master.inventory.SetEquipmentIndex(EquipmentIndex.None);
-                        player.giftedAffix = false;
-                    }
-
-                    if (metamorphosIsEnabled && player.inventory.GetItemCount(RoR2Content.Items.InvadingDoppelganger) > 0) player.inventory.RemoveItem(RoR2Content.Items.InvadingDoppelganger);
-
-                    if (_classicItems != null)
-                        GiveScepterCI(player.master);
-                    if (_standaloneAncientScepter != null)
-                        GiveScepterSAS(player.master);
-
-                    if (_config.RemoveAllItems && _config.ReturnItemsOnStageChange) player.master.inventory.AddItemsFrom(player.inventory);
-                    if (_config.ForceItemRestoration) player.master.inventory.CopyItemsFrom(player.inventory);
-
-                    player.isDead = false;
-                }
+                if(player.isDead) CleanPlayer(player);
                 Logger.LogInfo(player.user.userName + "'s prefab reset.");
             }
             SetupPlayers();
             Logger.LogInfo("Reset player prefabs!");
         }
 
+        private void CleanPlayer(PlayerStorage player)
+        {
+            player.master.bodyPrefab = player.origPrefab;
+            player.master.teamIndex = TeamIndex.Player;
+
+            if (player.giftedAffix)
+            {
+                player.master.inventory.SetEquipmentIndex(EquipmentIndex.None);
+                player.giftedAffix = false;
+            }
+
+            if (metamorphosIsEnabled && player.inventory.GetItemCount(RoR2Content.Items.InvadingDoppelganger) > 0) player.inventory.RemoveItem(RoR2Content.Items.InvadingDoppelganger);
+
+            if (_classicItems != null)
+                GiveScepterCI(player.master);
+            if (_standaloneAncientScepter != null)
+                GiveScepterSAS(player.master);
+
+            if (_config.RemoveAllItems && _config.ReturnItemsOnStageChange) player.master.inventory.AddItemsFrom(player.inventory);
+            if (_config.ForceItemRestoration) player.master.inventory.CopyItemsFrom(player.inventory);
+
+            player.isDead = false;
+        }
 
         // Utility Methods
         //

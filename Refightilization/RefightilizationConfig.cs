@@ -27,6 +27,8 @@ namespace Wonda
         private readonly ConfigEntry<bool> _returnItemsOnStageChange;
         private readonly ConfigEntry<bool> _takeAffix;
 
+        private readonly ConfigEntry<bool> _murderRevive;
+
         private readonly ConfigEntry<bool> _endGameWhenEverybodyDead;
         private readonly ConfigEntry<bool> _forceItemRestoration;
 
@@ -51,6 +53,8 @@ namespace Wonda
         public bool ReturnItemsOnStageChange { get => _returnItemsOnStageChange.Value; }
         public bool TakeAffix { get => _takeAffix.Value; }
 
+        public bool MurderRevive { get => _murderRevive.Value; }
+
         public bool EndGameWhenEverybodyDead { get => _endGameWhenEverybodyDead.Value; }
         public bool ForceItemRestoration { get => _forceItemRestoration.Value; }
 
@@ -69,13 +73,15 @@ namespace Wonda
             _respawnDamageMultiplier = config.Bind("Respawn Settings", "RespawnDamageMultiplier", 5f, "Multiplies the damage a player spawns with.");
             _respawnMoneyMultiplier = config.Bind("Respawn Settings", "RespawnMoneyMultiplier", 1.1f, "Multiplies the money rewarded for killing a player.");
             _respawnAffixChance = config.Bind("Respawn Settings", "RespawnAffixChance", 60f, "Sets the chance that a respawned player will have an affix.");
-            _additionalRespawnTime = config.Bind("Respawn Settings", "AdditionalRespawnTime", 0.25f, "Sets how much respawn time will increase per player death. This will effect everyone.");
+            _additionalRespawnTime = config.Bind("Respawn Settings", "AdditionalRespawnTime", 0.2f, "Sets how much respawn time will increase per player death. This will effect everyone.");
 
             _itemPickupToggle = config.Bind("Item Settings", "ItemPickupToggle", true, "Allows monster players to pick up items off the ground. (Disabling won't work if RespawnTeam is set to 1.)");
             _removeMonsterVariantItems = config.Bind("Item Settings", "RemoveMonsterVariantItems", true, "Will remove items given to players by Monster Variants on respawn.");
             _removeAllItems = config.Bind("Item Settings", "RemoveAllItems", false, "Will remove all items in a player's inventory when they respawn.");
             _returnItemsOnStageChange = config.Bind("Item Settings", "ReturnItemsOnStageChange", true, "If RemoveAllItems is enabled, will allow removed items to be returned when the stage changes.");
             _takeAffix = config.Bind("Item Settings", "TakeAffix", true, "Will take away granted affixes upon respawning.");
+
+            _murderRevive = config.Bind("Behavior", "MurderRevive", true, "Will respawn a dead player as a survivor if they kill another player.");
 
             _forceItemRestoration = config.Bind("Item Settings", "ForceItemRestoration", false, "Will reset a player's inventory to the state it was before they died. (Overrides ReturnItemsOnStageChange.)");
 
