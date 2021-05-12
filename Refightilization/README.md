@@ -21,8 +21,7 @@ If you ever want to mess with this mod while in single player, there are some co
 # Issues
 
 - Artifact of Metamorphosis will spawn you as a random survivor as opposed to a random monster.
-- [BetterUI](https://thunderstore.io/package/XoXFaby/BetterUI/), [Busted Diabolo Strike](https://thunderstore.io/package/farofus/Captain_Busted_Diablo_Strike/), and [Bandit Tweaks](https://thunderstore.io/package/Moffein/Bandit_Tweaks/) will flood the console when the player respawns. Seemingly does nothing else.
-- Occasional FPS drops for the host.
+- Incompatibility with ArtificerExtended while TakeAffix is enabled.
 
 # Contact
 
@@ -39,6 +38,8 @@ Thanks to Cebe, Joe, JC, and PurpleKid for helping me test this mod out prior to
 Thanks to Lux, EnderGrimm and Gaforb for providing tons of feedback to help make this mod better.
 
 # Changelog
+
+1.0.7 - Teleporter interaction hotfixes, possible NRE catch, fixed respawn behavior to allow for better mod compatibility, adjusted spawn rules for champions and scavangers.
 
 1.0.6 - Caught edge case of player respawning after all players teleporting, fixed compatibility with mods that respawn players, and added feature where dead players can kill alive players to respawn.
 

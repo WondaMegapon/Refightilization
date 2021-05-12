@@ -27,7 +27,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.6";
+        const string version = "1.0.7";
 
         // Config
         private RefightilizationConfig _config;
@@ -114,6 +114,7 @@ namespace Wonda
 
         private void Run_OnServerSceneChanged(On.RoR2.Run.orig_OnServerSceneChanged orig, Run self, string sceneName)
         {
+            if(_config.EnableRefightilization) StopCoroutine(RespawnCheck());
             orig(self, sceneName);
             if (self.stageClearCount == 0 || !_config.EnableRefightilization) return; // Kinda pointless to reset prefabs before the stage begins.
             metamorphosIsEnabled = RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.randomSurvivorOnRespawnArtifactDef);
@@ -134,7 +135,8 @@ namespace Wonda
                 foreach (PlayerStorage player in playerStorage)
                 {
                     if (self.isCharged && _monsterVariants != null) RemoveMonsterVariantItems(player.master);
-                    if (player.master.GetBody().gameObject == activator.gameObject && player.isDead && player.master.teamIndex != TeamIndex.Player && playerStorage.Count > 1) return; // If there's multiple players, then dead ones won't be able to activate the teleporter.
+                    if (self.isCharged) StopCoroutine(RespawnCheck());
+                    if (player.master != null && player.master.GetBody() != null && player.master.GetBody().gameObject == activator.gameObject && player.isDead && player.master.teamIndex != TeamIndex.Player && playerStorage.Count > 1) return; // If there's multiple players, then dead ones won't be able to activate the teleporter.
                 }
             }
             orig(self, activator);
@@ -172,7 +174,7 @@ namespace Wonda
                 string currMethod = new StackFrame(2).GetMethod().Name;
                 if (currMethod != "RefightRespawn" && (FindPlayerStorage(self) != null))
                 {
-                    self.bodyPrefab = FindPlayerStorage(self).origPrefab;
+                    CleanPlayer(FindPlayerStorage(self));
                 }
             }
             return orig(self, footPosition, rotation);
@@ -315,7 +317,7 @@ namespace Wonda
             }
 
             // Checking to see if the configuration has disabled the selected monster.
-            if ((randomMonster.GetComponent<CharacterBody>().isChampion && !_config.AllowBosses) || (randomMonster.name == "ScavengerBody" && !_config.AllowScavengers) || (CheckBlacklist(randomMonster.name) && ClassicStageInfo.instance.monsterSelection.Count > 1))
+            if ((!(_config.AllowBosses || Run.instance.loopClearCount >= 2) && randomMonster.GetComponent<CharacterBody>().isChampion) || (!(_config.AllowScavengers || Run.instance.loopClearCount >= 5) && randomMonster.name == "ScavengerBody") || (CheckBlacklist(randomMonster.name) && ClassicStageInfo.instance.monsterSelection.Count > 1))
             {
                 Logger.LogInfo(randomMonster.name + " is disabled! Retrying Respawn.");
                 RefightRespawn(player, deathPos);
@@ -333,16 +335,24 @@ namespace Wonda
             Logger.LogInfo("Found body " + randomMonster.name + ".");
 
             // Is the Artifact of Metamorphosis enabled?
-            if(metamorphosIsEnabled && player.inventory.GetItemCount(RoR2Content.Items.InvadingDoppelganger) <= 0) player.inventory.GiveItem(RoR2Content.Items.InvadingDoppelganger);
+            if(metamorphosIsEnabled && player.inventory && RoR2Content.Items.InvadingDoppelganger && player.inventory.GetItemCount(RoR2Content.Items.InvadingDoppelganger) <= 0) player.inventory.GiveItem(RoR2Content.Items.InvadingDoppelganger);
+            Logger.LogInfo("Checked for Metamorphosis.");
 
             // Do we have an Ancient Scepter?
             if (_classicItems != null)
                 TakeScepterCI(player);
             if (_standaloneAncientScepter != null)
                 TakeScepterSAS(player);
+            Logger.LogInfo("Checked for Ancient Scepter.");
 
             // Assigning the player to the selected monster prefab.
-            player.bodyPrefab = randomMonster;
+            if (player.bodyPrefab && randomMonster) { 
+                player.bodyPrefab = randomMonster; 
+            } else {
+                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " has no bodyPrefab!? Retrying...");
+                RefightRespawn(player, deathPos);
+                return;
+            }
             Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was assigned to " + player.bodyPrefab.name + ".");
 
             // Grabbing a viable position for the player to spawn in.
@@ -357,6 +367,7 @@ namespace Wonda
             if(player.GetBody().GetComponent<DeathRewards>()) player.GetBody().GetComponent<DeathRewards>().goldReward *= (uint)_config.RespawnMoneyMultiplier;
             player.GetBody().baseRegen = 1f;
             player.GetBody().levelRegen = 0.2f;
+            
 
             // Some fun stuff to allow players to easily get back into combat.
             player.GetBody().AddTimedBuff(RoR2Content.Buffs.ArmorBoost, 15f);
