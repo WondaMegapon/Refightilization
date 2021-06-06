@@ -20,6 +20,8 @@ namespace Wonda
         private readonly ConfigEntry<float> _respawnMoneyMultiplier;
         private readonly ConfigEntry<float> _respawnAffixChance;
         private readonly ConfigEntry<float> _additionalRespawnTime;
+        private readonly ConfigEntry<bool> _respawnAsMonsterVariants;
+        private readonly ConfigEntry<bool> _noRespawnsAfterTeleporter;
 
         private readonly ConfigEntry<bool> _itemPickupToggle;
         private readonly ConfigEntry<bool> _removeMonsterVariantItems;
@@ -46,6 +48,8 @@ namespace Wonda
         public float RespawnMoneyMultiplier { get => _respawnMoneyMultiplier.Value; }
         public float RespawnAffixChance { get => _respawnAffixChance.Value; }
         public float AdditionalRespawnTime { get => _additionalRespawnTime.Value; }
+        public bool RespawnAsMonsterVariants { get => _respawnAsMonsterVariants.Value; }
+        public bool NoRespawnsAfterTeleporter { get => _noRespawnsAfterTeleporter.Value; }
 
         public bool ItemPickupToggle { get => _itemPickupToggle.Value; }
         public bool RemoveMonsterVariantItems { get => _removeMonsterVariantItems.Value; }
@@ -65,7 +69,7 @@ namespace Wonda
 
             _allowBosses = config.Bind("Monster Categories", "AllowBosses", true, "Allows players to spawn as bosses.");
             _allowScavengers = config.Bind("Monster Categories", "AllowScavengers", false, "Allows players to spawn as Scavengers.");
-            _blacklistedEnemies = config.Bind("Monster Categories", "BlacklistedEnemies", "BeetleBody, JellyfishBody, WispBody", "Sets monsters to prevent players from spawning as.");
+            _blacklistedEnemies = config.Bind("Monster Categories", "BlacklistedEnemies", "BeetleBody, JellyfishBody, WispBody", "Sets monsters to prevent players from spawning as. A list of bodies can be grabbed by using body_list in the console.");
 
             _respawnDelay = config.Bind("Respawn Settings", "RespawnDelay", 5f, "Sets the delay until the player can respawn.");
             _respawnTeam = config.Bind("Respawn Settings", "RespawnTeam", 0, "Sets the team of the respawned players. (-1 None / 0 Neutral / 1 Player / 2 Monster / 3 Lunar / 4 Count)");
@@ -74,6 +78,8 @@ namespace Wonda
             _respawnMoneyMultiplier = config.Bind("Respawn Settings", "RespawnMoneyMultiplier", 1.1f, "Multiplies the money rewarded for killing a player.");
             _respawnAffixChance = config.Bind("Respawn Settings", "RespawnAffixChance", 60f, "Sets the chance that a respawned player will have an affix.");
             _additionalRespawnTime = config.Bind("Respawn Settings", "AdditionalRespawnTime", 0.2f, "Sets how much respawn time will increase per player death. This will effect everyone.");
+            _respawnAsMonsterVariants = config.Bind("Respawn Settings", "RespawnAsMonsterVariants", true, "Allows players to respawn as Monster Variants.");
+            _noRespawnsAfterTeleporter = config.Bind("Respawn Settings", "NoRespawnsAfterTeleporter", true, "Disables respawning after the Teleporter event concludes.");
 
             _itemPickupToggle = config.Bind("Item Settings", "ItemPickupToggle", true, "Allows monster players to pick up items off the ground. (Disabling won't work if RespawnTeam is set to 1.)");
             _removeMonsterVariantItems = config.Bind("Item Settings", "RemoveMonsterVariantItems", true, "Will remove items given to players by Monster Variants on respawn.");

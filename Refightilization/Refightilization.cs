@@ -15,6 +15,7 @@ namespace Wonda
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync)]
     [BepInDependency("com.bepis.r2api", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.rob.MonsterVariants", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.Nebby.VarianceAPI", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.ThinkInvisible.TILER2", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.ThinkInvisible.ClassicItems", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.DestroyedClone.AncientScepter", BepInDependency.DependencyFlags.SoftDependency)]
@@ -27,13 +28,14 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.7";
+        const string version = "1.0.8";
 
         // Config
         private RefightilizationConfig _config;
 
         // Additional mods to hook into for balance reasons.
         private PluginInfo _monsterVariants;
+        private PluginInfo _varianceAPI;
         private PluginInfo _classicItems;
         private PluginInfo _standaloneAncientScepter;
 
@@ -65,6 +67,7 @@ namespace Wonda
         public void Start()
         {
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.rob.MonsterVariants", out var monsterVariantsPlugin)) _monsterVariants = monsterVariantsPlugin;
+            if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.Nebby.VarianceAPI", out var varianceAPI)) _varianceAPI = varianceAPI;
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.ThinkInvisible.ClassicItems", out var classicItemsPlugin)) _classicItems = classicItemsPlugin;
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.DestroyedClone.AncientScepter", out var standaloneAncientScepterPlugin)) _standaloneAncientScepter = standaloneAncientScepterPlugin;
         }
@@ -97,7 +100,7 @@ namespace Wonda
         private void GlobalEventManager_OnPlayerCharacterDeath(On.RoR2.GlobalEventManager.orig_OnPlayerCharacterDeath orig, GlobalEventManager self, DamageReport damageReport, NetworkUser victimNetworkUser)
         {
             
-            if (_config.EnableRefightilization && _monsterVariants != null) RemoveMonsterVariantItems(victimNetworkUser.master); // Was player previously a monster variant? Gotta take away those items if the server owner wants that.
+            if (_config.EnableRefightilization) RemoveMonsterVariantItems(victimNetworkUser.master); // Was player previously a monster variant? Gotta take away those items if the server owner wants that.
             orig(self, damageReport, victimNetworkUser);
             if(!_config.EnableRefightilization) return;
             if(_config.MurderRevive && FindPlayerStorage(damageReport.attackerMaster) != null && FindPlayerStorage(damageReport.attackerMaster).isDead && FindPlayerStorage(damageReport.victimMaster) != null && !FindPlayerStorage(damageReport.victimMaster).isDead)
@@ -134,7 +137,7 @@ namespace Wonda
             if (_config.EnableRefightilization) { 
                 foreach (PlayerStorage player in playerStorage)
                 {
-                    if (self.isCharged && _monsterVariants != null) RemoveMonsterVariantItems(player.master);
+                    if (self.isCharged) RemoveMonsterVariantItems(player.master);
                     if (self.isCharged) StopCoroutine(RespawnCheck());
                     if (player.master != null && player.master.GetBody() != null && player.master.GetBody().gameObject == activator.gameObject && player.isDead && player.master.teamIndex != TeamIndex.Player && playerStorage.Count > 1) return; // If there's multiple players, then dead ones won't be able to activate the teleporter.
                 }
@@ -222,15 +225,22 @@ namespace Wonda
 
             if(!Run.instance.isActiveAndEnabled) yield break;
 
-            Logger.LogInfo("Checking players...");
-
             // Wait... Yea disable functionality if the mod is disabled.
             if (!_config.EnableRefightilization)
             {
                 Logger.LogInfo("Nevermind. Mod is disabled via config.");
                 yield break;
             }
-            
+
+            // Gotta prevent a major issue with players respawning after a teleporter event, causing the game to be over.
+            if (_config.NoRespawnsAfterTeleporter && TeleporterInteraction.instance.isCharged)
+            {
+                Logger.LogInfo("Respawning after teleporter is disabled!");
+                yield break;
+            }
+
+            Logger.LogInfo("Checking players...");
+
             // Okay, prep a flag for if everybody has died and kill the function if PlayerStorage is null for some reason.
             bool isEverybodyDead = true;
             if (playerStorage == null)
@@ -361,13 +371,15 @@ namespace Wonda
             player.Respawn(GrabNearestNodePosition(newPos), Quaternion.identity);
             Logger.LogInfo("Respawned " + player.playerCharacterMasterController.networkUser.userName + "!");
 
+            // Catching Monster Variants if the host has it disabled.
+            if(!_config.RespawnAsMonsterVariants) RemoveMonsterVariantItems(player);
+
             // Stat changes to allow players to not die instantly when they get into the game.
             player.GetBody().baseMaxHealth *= _config.RespawnHealthMultiplier;
             player.GetBody().baseDamage *= _config.RespawnDamageMultiplier;
             if(player.GetBody().GetComponent<DeathRewards>()) player.GetBody().GetComponent<DeathRewards>().goldReward *= (uint)_config.RespawnMoneyMultiplier;
             player.GetBody().baseRegen = 1f;
             player.GetBody().levelRegen = 0.2f;
-            
 
             // Some fun stuff to allow players to easily get back into combat.
             player.GetBody().AddTimedBuff(RoR2Content.Buffs.ArmorBoost, 15f);
@@ -456,6 +468,8 @@ namespace Wonda
 
             if (metamorphosIsEnabled && player.inventory.GetItemCount(RoR2Content.Items.InvadingDoppelganger) > 0) player.inventory.RemoveItem(RoR2Content.Items.InvadingDoppelganger);
 
+            RemoveMonsterVariantItems(player.master);
+
             if (_classicItems != null)
                 GiveScepterCI(player.master);
             if (_standaloneAncientScepter != null)
@@ -519,9 +533,16 @@ namespace Wonda
         // Code for handling other mods.
         //
 
+        // One-upping myself by having a master function that can call sub-functions.
+        private void RemoveMonsterVariantItems(CharacterMaster player)
+        {
+            if(_monsterVariants != null) { RemoveMonsterVariantItemsMV(player); }
+            if(_varianceAPI != null) { RemoveMonsterVariantItemsAPI(player); }
+        }
+
         // Stolen coooode. It takes the AddItems function from MonsterVariants and does everything in reverse.
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        private void RemoveMonsterVariantItems(CharacterMaster player)
+        private void RemoveMonsterVariantItemsMV(CharacterMaster player)
         {
             if (player != null && player.GetBody() && player.GetBody().GetComponent<MonsterVariants.Components.VariantHandler>() && player.GetBody().GetComponent<MonsterVariants.Components.VariantHandler>().isVariant && _config.RemoveMonsterVariantItems)
             {
@@ -529,7 +550,7 @@ namespace Wonda
 
                 MonsterVariants.Components.VariantHandler inv = player.GetBody().GetComponent<MonsterVariants.Components.VariantHandler>();
 
-                if (inv.customInventory == null) inv.customInventory = new ItemInfo[0];
+                if (inv.customInventory == null) inv.customInventory = new MonsterVariants.ItemInfo[0];
 
                 if (inv.customInventory.Length > 0)
                 {
@@ -550,7 +571,37 @@ namespace Wonda
             }
         }
 
-        
+        // Repeating code for VariantsAPI
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        private void RemoveMonsterVariantItemsAPI(CharacterMaster player)
+        {
+            if (player != null && player.GetBody() && player.GetBody().GetComponent<VarianceAPI.Components.VariantHandler>() && player.GetBody().GetComponent<VarianceAPI.Components.VariantHandler>().isVariant && _config.RemoveMonsterVariantItems)
+            {
+                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " is a Monster Variant. Attempting to remove their items.");
+
+                VarianceAPI.Components.VariantHandler inv = player.GetBody().GetComponent<VarianceAPI.Components.VariantHandler>();
+
+                if (inv.customInventory == null) inv.customInventory = new VarianceAPI.Scriptables.ItemInfo[0];
+
+                if (inv.customInventory.Length > 0)
+                {
+                    for (int i = 0; i < inv.customInventory.Length; i++)
+                    {
+                        player.inventory.GiveItemString(inv.customInventory[i].itemString, -inv.customInventory[i].count); // Possible edge case where it eats up a DIOs if a player spawns as a Jellyfish?
+                        Logger.LogInfo("Removing " + player.playerCharacterMasterController.networkUser.userName + "'s " + inv.customInventory[i].count + " " + inv.customInventory[i].itemString + "(s).");
+                    }
+                }
+
+                if (inv.tier == VarianceAPI.VariantTier.Uncommon || inv.tier == VarianceAPI.VariantTier.Rare)
+                {
+                    player.inventory.RemoveItem(RoR2Content.Items.Infusion);
+                    Logger.LogInfo("Removing " + player.playerCharacterMasterController.networkUser.userName + "'s spare Infusion.");
+                }
+
+                Destroy(inv);
+            }
+        }
+
         // This one is for Classic Items. It takes the player's Scepter.
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void TakeScepterCI(CharacterMaster player)

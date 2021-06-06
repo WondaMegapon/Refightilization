@@ -71,6 +71,9 @@
     <Reference Include="UnityEngine.Networking">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Risk of Rain 2\Risk of Rain 2_Data\Managed\UnityEngine.Networking.dll</HintPath>
     </Reference>
+    <Reference Include="VarianceAPI">
+      <HintPath>bin\ReferenceDLLS\VarianceAPI.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
