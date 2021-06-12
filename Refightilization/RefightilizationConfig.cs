@@ -31,6 +31,7 @@ namespace Wonda
         private readonly ConfigEntry<bool> _takeAffix;
 
         private readonly ConfigEntry<bool> _murderRevive;
+        private readonly ConfigEntry<bool> _announceRespawns;
 
         private readonly ConfigEntry<bool> _endGameWhenEverybodyDead;
         private readonly ConfigEntry<int> _maxRespawnTries;
@@ -61,6 +62,7 @@ namespace Wonda
         public bool TakeAffix { get => _takeAffix.Value; }
 
         public bool MurderRevive { get => _murderRevive.Value; }
+        public bool AnnounceRespawns { get => _announceRespawns.Value; }
 
         public bool EndGameWhenEverybodyDead { get => _endGameWhenEverybodyDead.Value; }
         public int MaxRespawnTries { get => _maxRespawnTries.Value; }
@@ -93,6 +95,7 @@ namespace Wonda
             _takeAffix = config.Bind("Item Settings", "TakeAffix", true, "Will take away granted affixes upon respawning.");
 
             _murderRevive = config.Bind("Behavior", "MurderRevive", true, "Will respawn a dead player as a survivor if they kill another player.");
+            _announceRespawns = config.Bind("Behavior", "AnnounceRespawns", true, "Will announce a player respawning in the chat.");
 
             _forceItemRestoration = config.Bind("Item Settings", "ForceItemRestoration", false, "Will reset a player's inventory to the state it was before they died. (Overrides ReturnItemsOnStageChange.)");
 

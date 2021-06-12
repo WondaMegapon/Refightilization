@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -84,6 +85,7 @@ namespace Wonda
             On.RoR2.GlobalEventManager.OnPlayerCharacterDeath += GlobalEventManager_OnPlayerCharacterDeath;
             On.RoR2.Run.OnServerSceneChanged += Run_OnServerSceneChanged;
             On.RoR2.Run.OnUserAdded += Run_OnUserAdded;
+            On.RoR2.Run.OnUserRemoved += Run_OnUserRemoved;
             On.RoR2.TeleporterInteraction.OnInteractionBegin += TeleporterInteraction_OnInteractionBegin;
             On.RoR2.GenericPickupController.AttemptGrant += GenericPickupController_AttemptGrant;
             On.RoR2.Run.BeginGameOver += Run_BeginGameOver;
@@ -132,6 +134,25 @@ namespace Wonda
             orig(self, user);
             if(Run.instance.time > 1f && _config.EnableRefightilization)
                 SetupPlayers(false); // For players who enter the game late.
+        }
+
+        private void Run_OnUserRemoved(On.RoR2.Run.orig_OnUserRemoved orig, Run self, NetworkUser user)
+        {
+            // TODO: Improve this to make it actually work.
+            if (Run.instance.time > 1f && _config.EnableRefightilization)
+            {
+                PlayerStorage target = null;
+                foreach(PlayerStorage player in playerStorage)
+                {
+                    if(player.user.userName == user.userName)
+                    {
+                        target = player;
+                    }
+                }
+                playerStorage.Remove(target);
+                SetupPlayers(false);
+            }
+            orig(self, user);
         }
 
         private void TeleporterInteraction_OnInteractionBegin(On.RoR2.TeleporterInteraction.orig_OnInteractionBegin orig, TeleporterInteraction self, Interactor activator)
@@ -252,12 +273,15 @@ namespace Wonda
             }
 
             // Iterate through each player and confirm whether or not they've died.
+            
             foreach (PlayerStorage player in playerStorage)
             {
                 if (player == null)
                 {
+                    Logger.LogInfo("Player doesn't exist! Skipping...");
                     playerStorage.Remove(player); // This was quickly spledged in and is untested. It'll probably break *everything* if a player leaves mid-game... It probably does already.
-                    continue;
+                    RespawnCheck(deathPos);
+                    yield break;
                 }
 
                 if (player.master.IsDeadAndOutOfLivesServer())
@@ -309,7 +333,7 @@ namespace Wonda
             // Apparently there's an NRE that can happen within this method, so I'm prepping for that possible event.
             if(player == null)
             {
-                Logger.LogError("Player is null!? Aborting Respawn.");
+                Logger.LogInfo("Player is null!? Aborting Respawn.");
                 return;
             }     
 
@@ -324,7 +348,7 @@ namespace Wonda
             SpawnCard monsterCard = ClassicStageInfo.instance.monsterSelection.Evaluate(Random.Range(0f, 1f)).spawnCard;
             if(monsterCard == null)
             {
-                Logger.LogError("Spawn card is null! Retrying Respawn.");
+                Logger.LogInfo("Spawn card is null! Retrying Respawn.");
                 RefightRespawn(player, deathPos);
                 return;
             }
@@ -333,7 +357,7 @@ namespace Wonda
             GameObject randomMonster = BodyCatalog.FindBodyPrefab(monsterCard.prefab.name.Replace("Master", "Body"));
             if (randomMonster == null)
             {
-                Logger.LogError("Random monster is null! Retrying Respawn.");
+                Logger.LogInfo("Random monster is null! Retrying Respawn.");
                 RefightRespawn(player, deathPos);
                 return;
             }
@@ -342,7 +366,7 @@ namespace Wonda
             if (respawnLoops < _config.MaxRespawnTries)
             {
                 // Checking to see if the configuration has disabled the selected monster.
-                if ((!(_config.AllowBosses || Run.instance.loopClearCount >= 2) && randomMonster.GetComponent<CharacterBody>().isChampion) || (!(_config.AllowScavengers || Run.instance.loopClearCount >= 5) && randomMonster.name == "ScavengerBody") || (CheckBlacklist(randomMonster.name) && ClassicStageInfo.instance.monsterSelection.Count > 1))
+                if ((!(_config.AllowBosses && Run.instance.loopClearCount >= 2) && randomMonster.GetComponent<CharacterBody>().isChampion) || (!(_config.AllowScavengers && Run.instance.loopClearCount >= 5) && randomMonster.name == "ScavengerBody") || (CheckBlacklist(randomMonster.name) && ClassicStageInfo.instance.monsterSelection.Count > 1))
                 {
                     Logger.LogInfo(randomMonster.name + " is disabled! Retrying Respawn.");
                     RefightRespawn(player, deathPos);
@@ -356,6 +380,10 @@ namespace Wonda
                     RefightRespawn(player, deathPos);
                     return;
                 }
+            }
+            else
+            {
+                Logger.LogInfo("Too many retries! Forcibly assigning monster.");
             }
 
             Logger.LogInfo("Found body " + randomMonster.name + ".");
@@ -382,8 +410,22 @@ namespace Wonda
             Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was assigned to " + player.bodyPrefab.name + ".");
 
             // Grabbing a viable position for the player to spawn in.
-            Vector3 newPos = deathPos;
-            if(TeleporterInteraction.instance) newPos = TeleporterInteraction.instance.transform.position + new Vector3(Random.Range(-5, 5), Random.Range(-5, 5), Random.Range(-2, 2));
+            Vector3 newPos = deathPos; // Starting with where the player dies, if all else fails.
+
+            // Attempting to find a position near a player.
+            // Disabled for spawning players on the other side of the map. TODO: Fix this.
+            /*System.Random r = new System.Random();
+            foreach (PlayerCharacterMasterController viableSpawn in PlayerCharacterMasterController.instances.OrderBy(x => r.Next()))
+            {
+                if (!viableSpawn.master.IsDeadAndOutOfLivesServer() && viableSpawn.master.transform != null)
+                { 
+                    newPos = viableSpawn.master.transform.position + new Vector3(Random.Range(-5, 5), Random.Range(-5, 5), Random.Range(-2, 2));
+                    break;
+                }
+            }*/
+
+            // If we can't find a position near a player, we'll try a position near the teleporter.
+            if (newPos == deathPos && TeleporterInteraction.instance) newPos = TeleporterInteraction.instance.transform.position + new Vector3(Random.Range(-5, 5), Random.Range(-5, 5), Random.Range(-2, 2));
             player.Respawn(GrabNearestNodePosition(newPos), Quaternion.identity);
             Logger.LogInfo("Respawned " + player.playerCharacterMasterController.networkUser.userName + "!");
 
@@ -449,7 +491,7 @@ namespace Wonda
             respawnLoops = 0;
 
             // Broadcasting it to everyone.
-            Chat.SendBroadcastChat(new Chat.SimpleChatMessage{ baseToken = "<style=cWorldEvent><sprite name=\"Skull\" tint=1> " + player.playerCharacterMasterController.networkUser.userName + " has inhabited the body of a " + player.GetBody().GetDisplayName() + "! <sprite name=\"Skull\" tint=1></style>" });
+            if(_config.AnnounceRespawns) Chat.SendBroadcastChat(new Chat.SimpleChatMessage{ baseToken = "<style=cWorldEvent><sprite name=\"Skull\" tint=1> " + player.playerCharacterMasterController.networkUser.userName + " has inhabited the body of a " + player.GetBody().GetDisplayName() + "! <sprite name=\"Skull\" tint=1></style>" });
         }
 
         // Making sure that players are set back to their original prefabs.
