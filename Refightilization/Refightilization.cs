@@ -29,7 +29,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.9";
+        const string version = "1.0.10";
 
         // Config
         private RefightilizationConfig _config;
@@ -296,8 +296,11 @@ namespace Wonda
         {
             Logger.LogInfo("Attempting player respawn!");
 
+            // Fun fact: I pushed a build without this. This is vital to anything working and it completly slipped my mind. The purpose of it should be obvious.
+            respawnLoops++;
+
             // Catching if we're in the middle of an infinite loop.
-            if(respawnLoops > 254)
+            if(respawnLoops > 99)
             {
                 Logger.LogError("INFINITE LOOP CAUGHT! Please file a bug report for Refightilization! This is not intended behavior.");
                 return;
@@ -347,7 +350,7 @@ namespace Wonda
                 }
 
                 // To prevent players from spawning in as the same monster twice in a row.
-                if (randomMonster.name == player.bodyPrefab.name)
+                if (randomMonster.name == player.bodyPrefab.name && _config.NoRepeatRespawns)
                 {
                     Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was already " + randomMonster.name + ". Retrying Respawn.");
                     RefightRespawn(player, deathPos);

@@ -42,6 +42,8 @@ Thanks to Nebby for giving advice on making the mod better compatible with other
 
 # Changelog
 
+1.0.10 - Added config toggle for preventing spawning as the same monster twice in a row, and hotfixed the previous hotfix. 
+
 1.0.9 - Implemented hotfix for infinite loops while selecting monsters, added incompatibility with [ArtifactOfGrief](https://thunderstore.io/package/kking117/ArtifactOfGrief/).
 
 1.0.8 - Added compatibility with [VarianceAPI](https://thunderstore.io/package/Nebby/VarianceAPI/), implemented hotfix for players keeping items granted by MonsterVariants, implemented hotfix for game-overs after using the teleporter.

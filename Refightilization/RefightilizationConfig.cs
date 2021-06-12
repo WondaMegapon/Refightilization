@@ -22,6 +22,7 @@ namespace Wonda
         private readonly ConfigEntry<float> _additionalRespawnTime;
         private readonly ConfigEntry<bool> _respawnAsMonsterVariants;
         private readonly ConfigEntry<bool> _noRespawnsAfterTeleporter;
+        private readonly ConfigEntry<bool> _noRepeatRespawns;
 
         private readonly ConfigEntry<bool> _itemPickupToggle;
         private readonly ConfigEntry<bool> _removeMonsterVariantItems;
@@ -51,6 +52,7 @@ namespace Wonda
         public float AdditionalRespawnTime { get => _additionalRespawnTime.Value; }
         public bool RespawnAsMonsterVariants { get => _respawnAsMonsterVariants.Value; }
         public bool NoRespawnsAfterTeleporter { get => _noRespawnsAfterTeleporter.Value; }
+        public bool NoRepeatRespawns { get => _noRepeatRespawns.Value; }
 
         public bool ItemPickupToggle { get => _itemPickupToggle.Value; }
         public bool RemoveMonsterVariantItems { get => _removeMonsterVariantItems.Value; }
@@ -82,6 +84,7 @@ namespace Wonda
             _additionalRespawnTime = config.Bind("Respawn Settings", "AdditionalRespawnTime", 0.2f, "Sets how much respawn time will increase per player death. This will effect everyone.");
             _respawnAsMonsterVariants = config.Bind("Respawn Settings", "RespawnAsMonsterVariants", true, "Allows players to respawn as Monster Variants.");
             _noRespawnsAfterTeleporter = config.Bind("Respawn Settings", "NoRespawnsAfterTeleporter", true, "Disables respawning after the Teleporter event concludes.");
+            _noRepeatRespawns = config.Bind("Respawn Settings", "NoRepeatRespawns", true, "Will attempt to prevent the player from respawning as the same monster twice in a row.");
 
             _itemPickupToggle = config.Bind("Item Settings", "ItemPickupToggle", true, "Allows monster players to pick up items off the ground. (Disabling won't work if RespawnTeam is set to 1.)");
             _removeMonsterVariantItems = config.Bind("Item Settings", "RemoveMonsterVariantItems", true, "Will remove items given to players by Monster Variants on respawn.");
