@@ -19,6 +19,7 @@ namespace Wonda
     [BepInDependency("com.ThinkInvisible.TILER2", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.ThinkInvisible.ClassicItems", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.DestroyedClone.AncientScepter", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInIncompatibility("com.kking117.ArtifactOfGrief")]
     [BepInPlugin(guid, modName, version)]
     public class Refightilization : BaseUnityPlugin
     {
@@ -28,7 +29,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.8";
+        const string version = "1.0.9";
 
         // Config
         private RefightilizationConfig _config;
@@ -56,6 +57,7 @@ namespace Wonda
         // Misc variables
         public float respawnTime; // For an added penalty per death.
         public bool metamorphosIsEnabled; // For tracking the artifact of the same name.
+        private int respawnLoops; // Will break out of the function if it runs into too many of these.
 
         public void Awake()
         {
@@ -233,7 +235,7 @@ namespace Wonda
             }
 
             // Gotta prevent a major issue with players respawning after a teleporter event, causing the game to be over.
-            if (_config.NoRespawnsAfterTeleporter && TeleporterInteraction.instance.isCharged)
+            if (_config.NoRespawnsAfterTeleporter && TeleporterInteraction.instance && TeleporterInteraction.instance.isCharged)
             {
                 Logger.LogInfo("Respawning after teleporter is disabled!");
                 yield break;
@@ -268,6 +270,7 @@ namespace Wonda
                         player.inventory.CopyItemsFrom(player.master.inventory);
                         if (_config.RemoveAllItems) player.master.inventory.CopyItemsFrom(new Inventory());
                     }
+                    respawnLoops = 0;
                     RefightRespawn(player.master, deathPos); // Begin respawning the player.
                 }
                 else
@@ -293,13 +296,19 @@ namespace Wonda
         {
             Logger.LogInfo("Attempting player respawn!");
 
+            // Catching if we're in the middle of an infinite loop.
+            if(respawnLoops > 254)
+            {
+                Logger.LogError("INFINITE LOOP CAUGHT! Please file a bug report for Refightilization! This is not intended behavior.");
+                return;
+            }
+
             // Apparently there's an NRE that can happen within this method, so I'm prepping for that possible event.
             if(player == null)
             {
                 Logger.LogError("Player is null!? Aborting Respawn.");
                 return;
-            }
-                      
+            }     
 
             // Was this player assigned an affix by us?
             if(FindPlayerStorage(player).giftedAffix)
@@ -326,20 +335,24 @@ namespace Wonda
                 return;
             }
 
-            // Checking to see if the configuration has disabled the selected monster.
-            if ((!(_config.AllowBosses || Run.instance.loopClearCount >= 2) && randomMonster.GetComponent<CharacterBody>().isChampion) || (!(_config.AllowScavengers || Run.instance.loopClearCount >= 5) && randomMonster.name == "ScavengerBody") || (CheckBlacklist(randomMonster.name) && ClassicStageInfo.instance.monsterSelection.Count > 1))
+            // Allowing for an easy way to break out of this possible loop of not finding a proper monster.
+            if (respawnLoops < _config.MaxRespawnTries)
             {
-                Logger.LogInfo(randomMonster.name + " is disabled! Retrying Respawn.");
-                RefightRespawn(player, deathPos);
-                return;
-            }
+                // Checking to see if the configuration has disabled the selected monster.
+                if ((!(_config.AllowBosses || Run.instance.loopClearCount >= 2) && randomMonster.GetComponent<CharacterBody>().isChampion) || (!(_config.AllowScavengers || Run.instance.loopClearCount >= 5) && randomMonster.name == "ScavengerBody") || (CheckBlacklist(randomMonster.name) && ClassicStageInfo.instance.monsterSelection.Count > 1))
+                {
+                    Logger.LogInfo(randomMonster.name + " is disabled! Retrying Respawn.");
+                    RefightRespawn(player, deathPos);
+                    return;
+                }
 
-            // To prevent players from spawning in as the same monster twice in a row.
-            if (randomMonster.name == player.bodyPrefab.name)
-            {
-                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was already " + randomMonster.name + ". Retrying Respawn.");
-                RefightRespawn(player, deathPos);
-                return;
+                // To prevent players from spawning in as the same monster twice in a row.
+                if (randomMonster.name == player.bodyPrefab.name)
+                {
+                    Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was already " + randomMonster.name + ". Retrying Respawn.");
+                    RefightRespawn(player, deathPos);
+                    return;
+                }
             }
 
             Logger.LogInfo("Found body " + randomMonster.name + ".");
@@ -428,6 +441,9 @@ namespace Wonda
                 player.inventory.SetEquipmentIndex(selectedBuff);
                 FindPlayerStorage(player).giftedAffix = _config.TakeAffix;
             }
+
+            // Resetting the amount of loops that we've done. 
+            respawnLoops = 0;
 
             // Broadcasting it to everyone.
             Chat.SendBroadcastChat(new Chat.SimpleChatMessage{ baseToken = "<style=cWorldEvent><sprite name=\"Skull\" tint=1> " + player.playerCharacterMasterController.networkUser.userName + " has inhabited the body of a " + player.GetBody().GetDisplayName() + "! <sprite name=\"Skull\" tint=1></style>" });

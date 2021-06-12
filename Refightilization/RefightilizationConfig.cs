@@ -32,6 +32,7 @@ namespace Wonda
         private readonly ConfigEntry<bool> _murderRevive;
 
         private readonly ConfigEntry<bool> _endGameWhenEverybodyDead;
+        private readonly ConfigEntry<int> _maxRespawnTries;
         private readonly ConfigEntry<bool> _forceItemRestoration;
 
         // Making the public variables
@@ -60,6 +61,7 @@ namespace Wonda
         public bool MurderRevive { get => _murderRevive.Value; }
 
         public bool EndGameWhenEverybodyDead { get => _endGameWhenEverybodyDead.Value; }
+        public int MaxRespawnTries { get => _maxRespawnTries.Value; }
         public bool ForceItemRestoration { get => _forceItemRestoration.Value; }
 
         // Here's the fancy ol' initialization function.
@@ -92,6 +94,7 @@ namespace Wonda
             _forceItemRestoration = config.Bind("Item Settings", "ForceItemRestoration", false, "Will reset a player's inventory to the state it was before they died. (Overrides ReturnItemsOnStageChange.)");
 
             _endGameWhenEverybodyDead = config.Bind("Debug", "EndGameWhenEverybodyDead", true, "Ends the round when everybody is dead. (Keep this on.)");
+            _maxRespawnTries = config.Bind("Debug", "MaxRespawnTries", 25, "The maximum attempts the game will make to retry spawning a player.");
         }
     }
 }
