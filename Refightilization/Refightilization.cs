@@ -147,6 +147,7 @@ namespace Wonda
                     if(player.user.userName == user.userName)
                     {
                         target = player;
+                        break;
                     }
                 }
                 playerStorage.Remove(target);
@@ -223,7 +224,10 @@ namespace Wonda
                     foreach (PlayerStorage player in playerStorage)
                     {
                         if (player.master == playerCharacterMaster.master)
+                        {
                             flag = true;
+                            break;
+                        }
                     }
                     if(flag) continue;
                 }
@@ -575,7 +579,10 @@ namespace Wonda
             bool flag = false;
             foreach(string enemy in _config.BlacklistedEnemies)
             {
-                if (name == enemy) flag = true;
+                if (name == enemy) {
+                    flag = true;
+                    break;
+                }
             }
             return flag;
         }
@@ -585,7 +592,9 @@ namespace Wonda
             foreach(PlayerStorage player in playerStorage)
             {
                 if (player.master == cMaster)
+                {
                     return player;
+                }
             }
 
             return null;
