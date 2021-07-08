@@ -30,7 +30,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.10";
+        const string version = "1.0.11";
 
         // Config
         private RefightilizationConfig _config;
@@ -138,6 +138,7 @@ namespace Wonda
 
         private void Run_OnUserRemoved(On.RoR2.Run.orig_OnUserRemoved orig, Run self, NetworkUser user)
         {
+            orig(self, user);
             // TODO: Improve this to make it actually work.
             if (Run.instance.time > 1f && _config.EnableRefightilization)
             {
@@ -147,13 +148,13 @@ namespace Wonda
                     if(player.user.userName == user.userName)
                     {
                         target = player;
+                        Logger.LogInfo(user.userName + " left. Removing them from PlayerStorage.");
                         break;
                     }
                 }
                 playerStorage.Remove(target);
-                SetupPlayers(false);
+                //SetupPlayers(false);
             }
-            orig(self, user);
         }
 
         private void TeleporterInteraction_OnInteractionBegin(On.RoR2.TeleporterInteraction.orig_OnInteractionBegin orig, TeleporterInteraction self, Interactor activator)
@@ -217,10 +218,18 @@ namespace Wonda
             if(StageUpdate) playerStorage.Clear();
             foreach (PlayerCharacterMasterController playerCharacterMaster in PlayerCharacterMasterController.instances)
             {
-                // If this is ran mid-stage, just skip over existing players and add anybody who joined.
-                if(!StageUpdate && playerStorage != null)
+                // Skipping over Disconnected Players.
+                if (playerStorage != null && playerCharacterMaster.networkUser == null)
                 {
-                    bool flag = false;
+                    Logger.LogInfo("A player disconnected! Skipping over what remains of them...");
+                    continue;
+                }
+
+                // If this is ran mid-stage, just skip over existing players and add anybody who joined.
+                if (!StageUpdate && playerStorage != null)
+                {
+                    // Skipping over players that are already in the game.
+                    bool flag = false; 
                     foreach (PlayerStorage player in playerStorage)
                     {
                         if (player.master == playerCharacterMaster.master)
@@ -324,7 +333,7 @@ namespace Wonda
         {
             Logger.LogInfo("Attempting player respawn!");
 
-            // Fun fact: I pushed a build without this. This is vital to anything working and it completly slipped my mind. The purpose of it should be obvious.
+            // Fun fact: I pushed a build without this. This is vital to anything working and it completly slipped my mind. It helps us track how many loops we're in :).
             respawnLoops++;
 
             // Catching if we're in the middle of an infinite loop.
@@ -339,7 +348,13 @@ namespace Wonda
             {
                 Logger.LogInfo("Player is null!? Aborting Respawn.");
                 return;
-            }     
+            }
+
+            if(player.playerCharacterMasterController.networkUser == null)
+            {
+                Logger.LogInfo("Player doesn't have a networkUser!? Aborting Respawn.");
+                return;
+            }
 
             // Was this player assigned an affix by us?
             if(FindPlayerStorage(player).giftedAffix)
@@ -513,6 +528,11 @@ namespace Wonda
             // Iterating through every player and set all the things we've changed back.
             foreach (PlayerStorage player in playerStorage)
             {
+                if(player == null)
+                {
+                    Logger.LogInfo("Player is null! Continuing.");
+                    continue;
+                }
                 if(player.isDead) CleanPlayer(player);
                 Logger.LogInfo(player.user.userName + "'s prefab reset.");
             }

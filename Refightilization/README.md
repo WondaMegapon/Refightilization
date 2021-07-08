@@ -42,6 +42,8 @@ Thanks to Nebby for giving advice on making the mod better compatible with other
 
 # Changelog
 
+1.0.11 - Hotfixed a softlock that occurs when a user disconnects from a server! Prevented a NRE when attempting to respawn a disconnected player. Added minor performance improvements.
+
 1.0.10 - Added config toggle for preventing spawning as the same monster twice in a row, added config toggle for respawn announcements, added catch for players leaving mid-game, hotfixed boss and scavanger spawning, and hotfixed the previous hotfix.
 
 1.0.9 - Implemented hotfix for infinite loops while selecting monsters, added incompatibility with [ArtifactOfGrief](https://thunderstore.io/package/kking117/ArtifactOfGrief/).
