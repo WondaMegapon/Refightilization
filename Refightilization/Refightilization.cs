@@ -2,14 +2,11 @@
 using RoR2;
 using RoR2.Navigation;
 using R2API.Utils;
-using MonsterVariants;
 using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace Wonda
 {
