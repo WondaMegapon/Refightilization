@@ -103,8 +103,7 @@ namespace Wonda
 
         private void GlobalEventManager_OnPlayerCharacterDeath(On.RoR2.GlobalEventManager.orig_OnPlayerCharacterDeath orig, GlobalEventManager self, DamageReport damageReport, NetworkUser victimNetworkUser)
         {
-            
-            if (_config.EnableRefightilization) RemoveMonsterVariantItems(victimNetworkUser.master); // Was player previously a monster variant? Gotta take away those items if the server owner wants that.
+            if(_config.EnableRefightilization) RemoveMonsterVariantItems(victimNetworkUser.master); // Was player previously a monster variant? Gotta take away those items if the server owner wants that.
             orig(self, damageReport, victimNetworkUser);
             if(!_config.EnableRefightilization) return;
             if(_config.MurderRevive && FindPlayerStorage(damageReport.attackerMaster) != null && FindPlayerStorage(damageReport.attackerMaster).isDead && FindPlayerStorage(damageReport.victimMaster) != null && !FindPlayerStorage(damageReport.victimMaster).isDead)
@@ -637,27 +636,10 @@ namespace Wonda
             if (player != null && player.GetBody() && player.GetBody().GetComponent<MonsterVariants.Components.VariantHandler>() && player.GetBody().GetComponent<MonsterVariants.Components.VariantHandler>().isVariant && _config.RemoveMonsterVariantItems)
             {
                 Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " is a Monster Variant. Attempting to remove their items.");
-
-                MonsterVariants.Components.VariantHandler inv = player.GetBody().GetComponent<MonsterVariants.Components.VariantHandler>();
-
-                if (inv.customInventory == null) inv.customInventory = new MonsterVariants.ItemInfo[0];
-
-                if (inv.customInventory.Length > 0)
-                {
-                    for (int i = 0; i < inv.customInventory.Length; i++)
-                    {
-                        player.inventory.GiveItemString(inv.customInventory[i].itemString, -inv.customInventory[i].count); // Possible edge case where it eats up a DIOs if a player spawns as a Jellyfish?
-                        Logger.LogInfo("Removing " + player.playerCharacterMasterController.networkUser.userName + "'s " + inv.customInventory[i].count + " " + inv.customInventory[i].itemString + "(s).");
-                    }
-                }
-
-                if (inv.tier == MonsterVariantTier.Uncommon  || inv.tier == MonsterVariantTier.Rare)
-                {
-                    player.inventory.RemoveItem(RoR2Content.Items.Infusion);
-                    Logger.LogInfo("Removing " + player.playerCharacterMasterController.networkUser.userName + "'s spare Infusion.");
-                }
-
-                Destroy(inv);
+                Logger.LogError("Oh no! MonsterVariants is depreciated!? You'd better switch to VarianceAPI if you want proper functionality. :)"); // It was my idea, not Nebby's. :P
+                Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cDeath> Oh no! The server owner forgot to uninstall MonsterVariants! </style>" });
+                Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cDeath> They'd better switch to VarianceAPI! </style>" });
+                player.inventory.GiveItem(RoR2Content.Items.HealthDecay, 15); // Ok this part was Nebby's idea.
             }
         }
 
@@ -669,26 +651,37 @@ namespace Wonda
             {
                 Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " is a Monster Variant. Attempting to remove their items.");
 
-                VarianceAPI.Components.VariantHandler inv = player.GetBody().GetComponent<VarianceAPI.Components.VariantHandler>();
+                VarianceAPI.Components.VariantHandler src = player.GetBody().GetComponent<VarianceAPI.Components.VariantHandler>();
 
-                if (inv.customInventory == null) inv.customInventory = new VarianceAPI.Scriptables.ItemInfo[0];
+                Logger.LogInfo("Got a Variant Handler of " + src.identifierName);
 
-                if (inv.customInventory.Length > 0)
+                if (src.inventory != null)
                 {
-                    for (int i = 0; i < inv.customInventory.Length; i++)
+                    Logger.LogInfo(src.identifierName + "'s inventory was not null.");
+
+                    // Here's the main loop that removes items from the inventory.
+                    for (int i = 0; i < src.inventory.counts.Length; i++)
                     {
-                        player.inventory.GiveItemString(inv.customInventory[i].itemString, -inv.customInventory[i].count); // Possible edge case where it eats up a DIOs if a player spawns as a Jellyfish?
-                        Logger.LogInfo("Removing " + player.playerCharacterMasterController.networkUser.userName + "'s " + inv.customInventory[i].count + " " + inv.customInventory[i].itemString + "(s).");
+                        player.inventory.GiveItemString(src.inventory.itemStrings[i], -src.inventory.counts[i]); // Possible edge case where it eats up a DIOs if a player spawns as a Jellyfish?
+                        Logger.LogInfo("Removing " + player.playerCharacterMasterController.networkUser.userName + "'s " + src.inventory.counts[i] + " " + src.inventory.itemStrings[i] + "(s).");
                     }
+
+                }else{
+                    Logger.LogInfo(src.identifierName + "'s inventory was null.");
                 }
 
-                if (inv.tier == VarianceAPI.VariantTier.Uncommon || inv.tier == VarianceAPI.VariantTier.Rare)
+                // Removing the purple healthbar if the player has one.
+                if (src.tier >= VarianceAPI.VariantTier.Uncommon)
                 {
-                    player.inventory.RemoveItem(RoR2Content.Items.Infusion);
-                    Logger.LogInfo("Removing " + player.playerCharacterMasterController.networkUser.userName + "'s spare Infusion.");
+                    ItemDef purpHeal = VarianceAPI.ContentPackProvider.contentPack.itemDefs.Find("VAPI_PurpleHealthbar");
+                    if(purpHeal) player.inventory.RemoveItem(purpHeal);
+                    Logger.LogInfo("Removing " + player.playerCharacterMasterController.networkUser.userName + "'s purple health.");
                 }
 
-                Destroy(inv);
+                Logger.LogInfo("Finished removing Variant items.");
+
+                Destroy(src);
+                //if (player.GetBody().GetComponent<VarianceAPI.Components.VariantHandler>()) RemoveMonsterVariantItemsAPI(player); // Incase there are multiple VariantHandlers attatched.
             }
         }
 
