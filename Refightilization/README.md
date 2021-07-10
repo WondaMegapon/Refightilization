@@ -38,9 +38,11 @@ Thanks to Cebe, Joe, JC, and PurpleKid for helping me test this mod out prior to
 
 Thanks to Lux, EnderGrimm and Gaforb for providing tons of feedback to help make this mod better.
 
-Thanks to Nebby for giving advice on making the mod better compatible with other mods.
+Thanks to Nebby for giving advice on making the mod better compatible with other mods, and for helping with some errors with VarianceAPI.
 
 # Changelog
+
+1.0.12 - Depreciated support with MonsterVariants. Improved Support with VarianceAPI. (Special thanks to Nebby)
 
 1.0.11 - Hotfixed a softlock that occurs when a user disconnects from a server! Prevented a NRE when attempting to respawn a disconnected player. Added minor performance improvements.
 
