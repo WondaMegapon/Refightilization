@@ -100,7 +100,7 @@ namespace Wonda
             _forceItemRestoration = config.Bind("Item Settings", "ForceItemRestoration", false, "Will reset a player's inventory to the state it was before they died. (Overrides ReturnItemsOnStageChange.)");
 
             _endGameWhenEverybodyDead = config.Bind("Debug", "EndGameWhenEverybodyDead", true, "Ends the round when everybody is dead. (Keep this on.)");
-            _maxRespawnTries = config.Bind("Debug", "MaxRespawnTries", 25, "The maximum attempts the game will make to retry spawning a player.");
+            _maxRespawnTries = config.Bind("Debug", "MaxRespawnTries", 5, "The maximum attempts the game will make to retry spawning a player.");
         }
     }
 }

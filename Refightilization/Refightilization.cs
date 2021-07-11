@@ -6,10 +6,10 @@ using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Linq;
 using UnityEngine;
 using VarianceAPI;
 using VarianceAPI.Components;
-using System.Linq;
 using VarianceAPI.Scriptables;
 
 namespace Wonda
@@ -31,7 +31,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.12";
+        const string version = "1.0.13";
 
         // Config
         private RefightilizationConfig _config;
@@ -61,6 +61,7 @@ namespace Wonda
         public float respawnTime; // For an added penalty per death.
         public bool metamorphosIsEnabled; // For tracking the artifact of the same name.
         private int respawnLoops; // Will break out of the function if it runs into too many of these.
+        public List<GameObject> currWhitelist = new List<GameObject>(); // For optimization, keeping track of the current stage's whitelist.
 
         public void Awake()
         {
@@ -112,7 +113,7 @@ namespace Wonda
             if (!_config.EnableRefightilization) return;
             respawnTime = _config.RespawnDelay; // Making sure that this function exists on a per run basis.
             metamorphosIsEnabled = RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.randomSurvivorOnRespawnArtifactDef);
-            SetupPlayers(); // Gotta make sure players are properly stored once the run begins. (todo: What if players join after the run starts?)
+            SetupPlayers(); // Gotta make sure players are properly stored once the run begins.
         }
 
         private void GlobalEventManager_OnPlayerCharacterDeath(On.RoR2.GlobalEventManager.orig_OnPlayerCharacterDeath orig, GlobalEventManager self, DamageReport damageReport, NetworkUser victimNetworkUser)
@@ -136,10 +137,11 @@ namespace Wonda
         {
             if (_config.EnableRefightilization) StopCoroutine(RespawnCheck());
             orig(self, sceneName);
-            if (self.stageClearCount == 0 || !_config.EnableRefightilization) return; // Kinda pointless to reset prefabs before the stage begins.
-            metamorphosIsEnabled = RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.randomSurvivorOnRespawnArtifactDef);
-            respawnTime = _config.RespawnDelay;
-            ResetPrefabs(); // Gotta make sure players respawn as their desired class.
+            if (!_config.EnableRefightilization) return; // Kinda pointless to do anything if the mod is disabled.
+            metamorphosIsEnabled = RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.randomSurvivorOnRespawnArtifactDef); // Double checking the current artifact
+            if (self.stageClearCount > 0) ResetPrefabs(); // Gotta make sure players respawn as their desired class.
+            Invoke("UpdateStageWhitelist", 1f); // Gotta make sure we have an accurate monster selection.
+            respawnTime = _config.RespawnDelay; // Setting our wacky respawn delay.
         }
 
         private void Run_OnUserAdded(On.RoR2.Run.orig_OnUserAdded orig, Run self, NetworkUser user)
@@ -152,7 +154,6 @@ namespace Wonda
         private void Run_OnUserRemoved(On.RoR2.Run.orig_OnUserRemoved orig, Run self, NetworkUser user)
         {
             orig(self, user);
-            // TODO: Improve this to make it actually work.
             if (Run.instance.time > 1f && _config.EnableRefightilization)
             {
                 PlayerStorage target = null;
@@ -177,7 +178,8 @@ namespace Wonda
                 {
                     if (self.isCharged) RemoveMonsterVariantItems(player.master);
                     if (self.isCharged) StopCoroutine(RespawnCheck());
-                    if (player.master != null && player.master.GetBody() != null && player.master.GetBody().gameObject == activator.gameObject && player.isDead && player.master.teamIndex != TeamIndex.Player && playerStorage.Count > 1) return; // If there's multiple players, then dead ones won't be able to activate the teleporter.
+                    if (player.master != null && player.master.GetBody() != null && player.master.GetBody().gameObject == activator.gameObject && player.isDead && player.master.teamIndex != TeamIndex.Player && playerStorage.Count > 1) return; 
+                    // If there's multiple players, then dead ones won't be able to activate the teleporter.
                 }
             }
             orig(self, activator);
@@ -363,6 +365,7 @@ namespace Wonda
                 return;
             }
 
+            // Also chucking out any player who isn't currently connected to the server.
             if (player.playerCharacterMasterController.networkUser == null)
             {
                 Logger.LogInfo("Player doesn't have a networkUser!? Aborting Respawn.");
@@ -372,41 +375,18 @@ namespace Wonda
             // Was this player assigned an affix by us?
             if (FindPlayerStorage(player).giftedAffix)
             {
+                Logger.LogInfo("Yoinking that Affix.");
                 player.inventory.SetEquipmentIndex(EquipmentIndex.None);
                 FindPlayerStorage(player).giftedAffix = false;
             }
 
-            // Grabbing a random spawncard from the monster selection.
-            SpawnCard monsterCard = ClassicStageInfo.instance.monsterSelection.Evaluate(Random.Range(0f, 1f)).spawnCard;
-            if (monsterCard == null)
-            {
-                Logger.LogInfo("Spawn card is null! Retrying Respawn.");
-                RefightRespawn(player, deathPos);
-                return;
-            }
-
-            // Grabbing the prefab from that monster card.
-            GameObject randomMonster = BodyCatalog.FindBodyPrefab(monsterCard.prefab.name.Replace("Master", "Body"));
-            if (randomMonster == null)
-            {
-                Logger.LogInfo("Random monster is null! Retrying Respawn.");
-                RefightRespawn(player, deathPos);
-                return;
-            }
+            GameObject randomMonster = currWhitelist[Random.Range(0, currWhitelist.Count - 1)];
 
             // Allowing for an easy way to break out of this possible loop of not finding a proper monster.
             if (respawnLoops < _config.MaxRespawnTries)
             {
-                // Checking to see if the configuration has disabled the selected monster.
-                if ((!(_config.AllowBosses && Run.instance.loopClearCount >= 2) && randomMonster.GetComponent<CharacterBody>().isChampion) || (!(_config.AllowScavengers && Run.instance.loopClearCount >= 5) && randomMonster.name == "ScavengerBody") || (CheckBlacklist(randomMonster.name) && ClassicStageInfo.instance.monsterSelection.Count > 1))
-                {
-                    Logger.LogInfo(randomMonster.name + " is disabled! Retrying Respawn.");
-                    RefightRespawn(player, deathPos);
-                    return;
-                }
-
                 // To prevent players from spawning in as the same monster twice in a row.
-                if (randomMonster.name == player.bodyPrefab.name && _config.NoRepeatRespawns)
+                if (randomMonster.name == player.bodyPrefab.name && _config.NoRepeatRespawns && currWhitelist.Count > 1)
                 {
                     Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was already " + randomMonster.name + ". Retrying Respawn.");
                     RefightRespawn(player, deathPos);
@@ -448,19 +428,22 @@ namespace Wonda
             Vector3 newPos = deathPos; // Starting with where the player dies, if all else fails.
 
             // Attempting to find a position near a player.
-            // Disabled for spawning players on the other side of the map. TODO: Fix this.
-            /*System.Random r = new System.Random();
+            /*
+            System.Random r = new System.Random();
             foreach (PlayerCharacterMasterController viableSpawn in PlayerCharacterMasterController.instances.OrderBy(x => r.Next()))
             {
-                if (!viableSpawn.master.IsDeadAndOutOfLivesServer() && viableSpawn.master.transform != null)
+                if (!viableSpawn.master.IsDeadAndOutOfLivesServer() && viableSpawn.master != null)
                 { 
                     newPos = viableSpawn.master.transform.position + new Vector3(Random.Range(-5, 5), Random.Range(-5, 5), Random.Range(-2, 2));
                     break;
                 }
-            }*/
+            }
+            */
 
             // If we can't find a position near a player, we'll try a position near the teleporter.
             if (newPos == deathPos && TeleporterInteraction.instance) newPos = TeleporterInteraction.instance.transform.position + new Vector3(Random.Range(-5, 5), Random.Range(-5, 5), Random.Range(-2, 2));
+
+            // Respawning that player!
             player.Respawn(GrabNearestNodePosition(newPos), Quaternion.identity);
             Logger.LogInfo("Respawned " + player.playerCharacterMasterController.networkUser.userName + "!");
 
@@ -481,45 +464,12 @@ namespace Wonda
             // And Affixes if the player is lucky.
             if (Util.CheckRoll(_config.RespawnAffixChance, player.playerCharacterMasterController.master) || RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.eliteOnlyArtifactDef))
             {
-                if (player.inventory.GetEquipmentIndex() != EquipmentIndex.None) return;
+                if (player.inventory.GetEquipmentIndex() != EquipmentIndex.None) return; // If the player already has an equipment, just skip over 'em.
 
-                int i = Random.Range(0, 5);
-                EquipmentIndex selectedBuff;
-                switch (i)
-                {
-                    case 0:
-                        selectedBuff = RoR2Content.Equipment.AffixRed.equipmentIndex;
-                        break;
-                    case 1:
-                        selectedBuff = RoR2Content.Equipment.AffixBlue.equipmentIndex;
-                        break;
-                    case 2:
-                        selectedBuff = RoR2Content.Equipment.AffixWhite.equipmentIndex;
-                        break;
-                    case 3:
-                        if (Run.instance.loopClearCount > 0)
-                            selectedBuff = RoR2Content.Equipment.AffixPoison.equipmentIndex;
-                        else
-                            selectedBuff = RoR2Content.Equipment.AffixRed.equipmentIndex;
-                        break;
-                    case 4:
-                        if (Run.instance.loopClearCount > 0)
-                            selectedBuff = RoR2Content.Equipment.AffixHaunted.equipmentIndex;
-                        else
-                            selectedBuff = RoR2Content.Equipment.AffixWhite.equipmentIndex;
-                        break;
-                    case 5:
-                        if (Run.instance.loopClearCount > 0)
-                            selectedBuff = RoR2Content.Equipment.AffixLunar.equipmentIndex;
-                        else
-                            selectedBuff = RoR2Content.Equipment.AffixBlue.equipmentIndex;
-                        break;
-                    default:
-                        selectedBuff = RoR2Content.Equipment.AffixRed.equipmentIndex;
-                        break;
-                }
-                player.inventory.SetEquipmentIndex(selectedBuff);
-                FindPlayerStorage(player).giftedAffix = _config.TakeAffix;
+                int i = Random.Range(0, EliteCatalog.eliteList.Count - 1); // Pick a random Elite index.
+                EquipmentIndex selectedBuff = EliteCatalog.GetEliteDef(EliteCatalog.eliteList[i]).eliteEquipmentDef.equipmentIndex; // Grab the associated equipment.
+                player.inventory.SetEquipmentIndex(selectedBuff); // Apply that equipment.
+                FindPlayerStorage(player).giftedAffix = _config.TakeAffix; // Set a variable to take it away.
             }
 
             // Resetting the amount of loops that we've done. 
@@ -583,6 +533,50 @@ namespace Wonda
             player.isDead = false;
         }
 
+        // Updating our Whitelist of monsters at stage generation.
+        private void UpdateStageWhitelist()
+        {
+            Logger.LogInfo("Updating the stage whitelist.");
+
+            // Clearing the old stage whitelist.
+            currWhitelist.Clear();
+
+            // Grabbing a reference liiist.
+            var list = ClassicStageInfo.instance.monsterSelection.choices.ToList();
+
+            // Beginning a nice lil' for loop.
+            foreach (var choice in list)
+            {
+                Logger.LogInfo("Testing choice.");
+
+                // First, we grab the SpawnCard of our monster.
+                SpawnCard currMonster = choice.value.spawnCard;
+                if (currMonster == null) continue;
+
+                // Then, we check to see if the monster has a body.
+                GameObject currMonsterBody = BodyCatalog.FindBodyPrefab(currMonster.prefab.name.Replace("Master", "Body"));
+                if (currMonsterBody == null) continue;
+                Logger.LogInfo("We have found " + currMonsterBody.name + ".");
+
+                // Nuking any unwanted Champions.
+                if (!(_config.AllowBosses && Run.instance.loopClearCount >= 2) && currMonsterBody.GetComponent<CharacterBody>().isChampion) continue;
+
+                // Nuking any unwanted Scavangers.
+                if (!(_config.AllowScavengers && Run.instance.loopClearCount >= 5) && currMonsterBody.name == "ScavengerBody") continue;
+
+                // Is it in our Blacklist?
+                if (CheckBlacklist(currMonsterBody.name)) continue;
+
+                // Add that rad dude!
+                currWhitelist.Add(currMonsterBody);
+                Logger.LogInfo("Adding " + currMonsterBody.name + " to the currWhitelist.");
+            }
+
+            // Bring out the backup dude if nothing works.
+            if (currWhitelist.Count <= 0) currWhitelist.Add(BodyCatalog.FindBodyPrefab("LemurianBody"));
+            Logger.LogInfo("Done updating Whitelist.");
+        }
+
         // Utility Methods
         //
 
@@ -625,6 +619,7 @@ namespace Wonda
             return flag;
         }
 
+        // Grabbing a certain player in the playerStorage object.
         private PlayerStorage FindPlayerStorage(CharacterMaster cMaster)
         {
             foreach (PlayerStorage player in playerStorage)
@@ -733,51 +728,6 @@ namespace Wonda
                 Logger.LogInfo("Finished " + variantHandler.identifierName + ". Proceeding to next item in the list.");
             }
         }
-
-        // Old code for VariantsAPI. Kept here for posterity. Might be removed later.
-        /*
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        private void oldRemoveMonsterVariantItemsAPI(CharacterMaster player)
-        {
-            if (player != null && player.GetBody() && player.GetBody().GetComponent<VarianceAPI.Components.VariantHandler>() && player.GetBody().GetComponent<VarianceAPI.Components.VariantHandler>().isVariant && _config.RemoveMonsterVariantItems)
-            {
-                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " is a Monster Variant. Attempting to remove their items.");
-
-                VarianceAPI.Components.VariantHandler src = player.GetBody().GetComponent<VarianceAPI.Components.VariantHandler>();
-
-                Logger.LogInfo("Got a Variant Handler of " + src.identifierName);
-
-                if (src.inventory != null)
-                {
-                    Logger.LogInfo(src.identifierName + "'s inventory was not null.");
-
-                    // Here's the main loop that removes items from the inventory.
-                    for (int i = 0; i < src.inventory.counts.Length; i++)
-                    {
-                        player.inventory.GiveItemString(src.inventory.itemStrings[i], -src.inventory.counts[i]); // Possible edge case where it eats up a DIOs if a player spawns as a Jellyfish?
-                        Logger.LogInfo("Removing " + player.playerCharacterMasterController.networkUser.userName + "'s " + src.inventory.counts[i] + " " + src.inventory.itemStrings[i] + "(s).");
-                    }
-
-                }
-                else
-                {
-                    Logger.LogInfo(src.identifierName + "'s inventory was null.");
-                }
-
-                // Removing the purple healthbar if the player has one.
-                if (src.tier >= VarianceAPI.VariantTier.Uncommon)
-                {
-                    ItemDef purpHeal = VarianceAPI.ContentPackProvider.contentPack.itemDefs.Find("VAPI_PurpleHealthbar");
-                    if (purpHeal) player.inventory.RemoveItem(purpHeal);
-                    Logger.LogInfo("Removing " + player.playerCharacterMasterController.networkUser.userName + "'s purple health.");
-                }
-
-                Logger.LogInfo("Finished removing Variant items.");
-
-                Destroy(src);
-                //if (player.GetBody().GetComponent<VarianceAPI.Components.VariantHandler>()) RemoveMonsterVariantItemsAPI(player); // Incase there are multiple VariantHandlers attatched.
-            }
-        }*/
 
         // This one is for Classic Items. It takes the player's Scepter.
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]

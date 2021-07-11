@@ -42,6 +42,8 @@ Thanks to Nebby for giving advice on making the mod better compatible with other
 
 # Changelog
 
+1.0.13 - Optimized monster selection and enabled support for modded aspects.
+
 1.0.12 - Depreciated support with MonsterVariants. Improved Support with VarianceAPI. (Special thanks to Nebby)
 
 1.0.11 - Hotfixed a softlock that occurs when a user disconnects from a server! Prevented a NRE when attempting to respawn a disconnected player. Added minor performance improvements.
