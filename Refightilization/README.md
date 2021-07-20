@@ -1,5 +1,4 @@
-﻿
-# Info
+﻿# Info
 
 Allows players to respawn as a monster when they die. Highly configurable.
 
@@ -13,10 +12,10 @@ If you ever want to mess with this mod while in single player, there are some co
 
 | Key | Value | Reason |
 |---|---|---|
-|EndGameWhenEverybodyDead|false|The run would end after the first death.|
-|RespawnDelay|0.0|The run would end because there are no players alive for a frame.|
+|EndGameWhenEverybodyDead|false|This will allow the game to not end after death.|
+|RespawnDelay|0.0|It's very boring to wait.|
 |RespawnTeam|1|The run would be softlocked because you can't charge the teleporter.|
-|AdditionalRespawnTime|0.0|The run would end because there are no players alive for a frame.|
+|AdditionalRespawnTime|0.0|Once again, it's *very* boring to wait.|
 
 # Issues
 
