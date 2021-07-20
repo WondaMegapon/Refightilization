@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
   </PropertyGroup>
 
   <ItemGroup>
@@ -67,5 +68,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="cd $(TargetDir)&#xD;&#xA;if exist output.zip (del output.zip)&#xD;&#xA;powershell Compress-Archive -Path '$(TargetFileName)', 'icon.png', 'manifest.json', 'manifestv2.json', 'README.md' -DestinationPath 'output.zip'" />
+  </Target>
 
 </Project>
