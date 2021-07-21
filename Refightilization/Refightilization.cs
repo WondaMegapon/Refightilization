@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Linq;
 using UnityEngine;
+using SimpleJSON;
 using VarianceAPI;
 using VarianceAPI.Components;
 using VarianceAPI.Scriptables;
@@ -31,10 +32,13 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.13";
+        const string version = "1.0.14";
 
         // Config
         private RefightilizationConfig _config;
+
+        // Language Management Stuff
+        private RefightilizationLanguage _language;
 
         // Additional mods to hook into for balance reasons.
         private PluginInfo _monsterVariants;
@@ -72,6 +76,7 @@ namespace Wonda
 
         public void Start()
         {
+            // Setting up all the mod compatibility.
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.rob.MonsterVariants", out var monsterVariantsPlugin)) _monsterVariants = monsterVariantsPlugin;
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.Nebby.VarianceAPI", out var varianceAPI)) _varianceAPI = varianceAPI;
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.ThinkInvisible.ClassicItems", out var classicItemsPlugin)) _classicItems = classicItemsPlugin;
@@ -92,19 +97,7 @@ namespace Wonda
             On.RoR2.TeleporterInteraction.OnInteractionBegin += TeleporterInteraction_OnInteractionBegin;
             On.RoR2.GenericPickupController.AttemptGrant += GenericPickupController_AttemptGrant;
             On.RoR2.CharacterMaster.Respawn += CharacterMaster_Respawn;
-            if (_config.EndGameWhenEverybodyDead)
-            {
-                On.RoR2.Run.BeginGameOver += Run_BeginGameOver;
-            }
-            else
-            {
-                On.RoR2.Run.BeginGameOver += BlockGameOver;
-            }
-        }
-
-        private void BlockGameOver(On.RoR2.Run.orig_BeginGameOver orig, Run self, GameEndingDef gameEndingDef)
-        {
-            if (_config.EnableRefightilization) StopCoroutine(RespawnCheck());
+            On.RoR2.Run.BeginGameOver += Run_BeginGameOver;
         }
 
         private void Run_Start(On.RoR2.Run.orig_Start orig, Run self)
@@ -112,8 +105,9 @@ namespace Wonda
             orig(self);
             if (!_config.EnableRefightilization) return;
             respawnTime = _config.RespawnDelay; // Making sure that this function exists on a per run basis.
-            metamorphosIsEnabled = RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.randomSurvivorOnRespawnArtifactDef);
+            metamorphosIsEnabled = RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.randomSurvivorOnRespawnArtifactDef); // Checking to see if the artifact is enabled
             SetupPlayers(); // Gotta make sure players are properly stored once the run begins.
+            SetupLang(); // For all of our wacky lines we need said.
         }
 
         private void GlobalEventManager_OnPlayerCharacterDeath(On.RoR2.GlobalEventManager.orig_OnPlayerCharacterDeath orig, GlobalEventManager self, DamageReport damageReport, NetworkUser victimNetworkUser)
@@ -121,13 +115,19 @@ namespace Wonda
             if (_config.EnableRefightilization) RemoveMonsterVariantItems(victimNetworkUser.master); // Was player previously a monster variant? Gotta take away those items if the server owner wants that.
             orig(self, damageReport, victimNetworkUser);
             if (!_config.EnableRefightilization) return;
+
+            // Handling PvP and if a monster successfully kills a player.
             if (_config.MurderRevive && FindPlayerStorage(damageReport.attackerMaster) != null && FindPlayerStorage(damageReport.attackerMaster).isDead && FindPlayerStorage(damageReport.victimMaster) != null && !FindPlayerStorage(damageReport.victimMaster).isDead)
             {
                 CleanPlayer(FindPlayerStorage(damageReport.attackerMaster));
                 damageReport.attackerMaster.RespawnExtraLife();
                 damageReport.attackerMaster.inventory.RemoveItem(RoR2Content.Items.ExtraLifeConsumed);
 
-                Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cWorldEvent><sprite name=\"Skull\" tint=1> " + damageReport.attackerMaster.playerCharacterMasterController.networkUser.userName + " has killed " + damageReport.victimMaster.playerCharacterMasterController.networkUser.userName + "! They will live again! <sprite name=\"Skull\" tint=1></style>" });
+                string messageText = _language.RevengeMessages[Random.Range(0, _language.RevengeMessages.Count - 1)];
+                messageText = messageText.Replace("{0}", damageReport.attackerMaster.playerCharacterMasterController.networkUser.userName);
+                messageText = messageText.Replace("{1}", damageReport.victimMaster.playerCharacterMasterController.networkUser.userName);
+
+                Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cWorldEvent><sprite name=\"Skull\" tint=1> " + messageText + " <sprite name=\"Skull\" tint=1></style>" });
             }
             StartCoroutine(RespawnCheck(victimNetworkUser.master.transform.position)); // Spawning in players shortly after a delay.
             respawnTime += _config.AdditionalRespawnTime;
@@ -207,7 +207,7 @@ namespace Wonda
         private void Run_BeginGameOver(On.RoR2.Run.orig_BeginGameOver orig, Run self, GameEndingDef gameEndingDef)
         {
             if (_config.EnableRefightilization) StopCoroutine(RespawnCheck());
-            orig(self, gameEndingDef);
+            if (!(_config.EnableRefightilization && !_config.EndGameWhenEverybodyDead)) orig(self, gameEndingDef);
         }
 
         private CharacterBody CharacterMaster_Respawn(On.RoR2.CharacterMaster.orig_Respawn orig, CharacterMaster self, Vector3 footPosition, Quaternion rotation)
@@ -221,6 +221,15 @@ namespace Wonda
                 }
             }
             return orig(self, footPosition, rotation);
+        }
+
+        // Not yet the end of hooks, but up here are setup functions, and I need a place to shuffle through language info when neccesary.
+        private void SetupLang()
+        {
+            _language = new RefightilizationLanguage();
+            Logger.LogInfo(Language.currentLanguageName);
+            Logger.LogInfo(_language.RevengeMessages.Count);
+            Logger.LogInfo(_language.ReviveMessages.Count);
         }
 
         // Beginning the *actual* custom code.
@@ -476,7 +485,13 @@ namespace Wonda
             respawnLoops = 0;
 
             // Broadcasting it to everyone.
-            if (_config.AnnounceRespawns) Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cWorldEvent><sprite name=\"Skull\" tint=1> " + player.playerCharacterMasterController.networkUser.userName + " has inhabited the body of a " + player.GetBody().GetDisplayName() + "! <sprite name=\"Skull\" tint=1></style>" });
+            if (_config.AnnounceRespawns) {
+                string messageText = _language.ReviveMessages[Random.Range(0, _language.ReviveMessages.Count - 1)];
+                messageText = messageText.Replace("{0}", player.playerCharacterMasterController.networkUser.userName);
+                messageText = messageText.Replace("{1}", player.GetBody().GetDisplayName());
+
+                Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cWorldEvent><sprite name=\"Skull\" tint=1> " + messageText + " <sprite name=\"Skull\" tint=1></style>" });
+            } 
         }
 
         // Making sure that players are set back to their original prefabs.

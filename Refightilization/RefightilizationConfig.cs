@@ -14,7 +14,7 @@ namespace Wonda
         private readonly ConfigEntry<string> _blacklistedEnemies;
 
         private readonly ConfigEntry<float> _respawnDelay;
-        private readonly ConfigEntry<int> _respawnTeam;
+        private readonly ConfigEntry<RoR2.TeamIndex> _respawnTeam;
         private readonly ConfigEntry<float> _respawnHealthMultiplier;
         private readonly ConfigEntry<float> _respawnDamageMultiplier;
         private readonly ConfigEntry<float> _respawnMoneyMultiplier;
@@ -45,7 +45,7 @@ namespace Wonda
         public string[] BlacklistedEnemies { get => _blacklistedEnemies.Value.Replace(" ", "").Split(','); }
 
         public float RespawnDelay { get => _respawnDelay.Value; }
-        public int RespawnTeam { get => _respawnTeam.Value; }
+        public RoR2.TeamIndex RespawnTeam { get => _respawnTeam.Value; }
         public float RespawnHealthMultiplier { get => _respawnHealthMultiplier.Value; }
         public float RespawnDamageMultiplier { get => _respawnDamageMultiplier.Value; }
         public float RespawnMoneyMultiplier { get => _respawnMoneyMultiplier.Value; }
@@ -78,7 +78,7 @@ namespace Wonda
             _blacklistedEnemies = config.Bind("Monster Categories", "BlacklistedEnemies", "BeetleBody, JellyfishBody, WispBody", "Sets monsters to prevent players from spawning as. A list of bodies can be grabbed by using body_list in the console.");
 
             _respawnDelay = config.Bind("Respawn Settings", "RespawnDelay", 5f, "Sets the delay until the player can respawn.");
-            _respawnTeam = config.Bind("Respawn Settings", "RespawnTeam", 0, "Sets the team of the respawned players. (-1 None / 0 Neutral / 1 Player / 2 Monster / 3 Lunar / 4 Count)");
+            _respawnTeam = config.Bind("Respawn Settings", "RespawnTeam", RoR2.TeamIndex.Neutral, "Sets the team of the respawned players.");
             _respawnHealthMultiplier = config.Bind("Respawn Settings", "RespawnHealthMultiplier", 1.1f, "Multiplies the health a player spawns with.");
             _respawnDamageMultiplier = config.Bind("Respawn Settings", "RespawnDamageMultiplier", 5f, "Multiplies the damage a player spawns with.");
             _respawnMoneyMultiplier = config.Bind("Respawn Settings", "RespawnMoneyMultiplier", 1.1f, "Multiplies the money rewarded for killing a player.");

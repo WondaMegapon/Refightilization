@@ -42,6 +42,8 @@
     </Reference>
     <Reference Include="R2API">
     </Reference>
+    <Reference Include="SimpleJSON">
+    </Reference>
     <Reference Include="TILER2">
     </Reference>
     <Reference Include="UnityEngine">
@@ -58,6 +60,9 @@
     <None Update="icon.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="LanguageResource.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="manifest.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -70,7 +75,9 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="cd $(TargetDir)&#xD;&#xA;if exist output.zip (del output.zip)&#xD;&#xA;powershell Compress-Archive -Path '$(TargetFileName)', 'icon.png', 'manifest.json', 'manifestv2.json', 'README.md' -DestinationPath 'output.zip'" />
+    <Exec Command="cd $(TargetDir)&#xD;&#xA;if exist output.zip (del output.zip)&#xD;&#xA;powershell Compress-Archive -Path '$(TargetFileName)', 'icon.png', 'manifest.json', 'manifestv2.json', 'README.md', 'LanguageResource.json' -DestinationPath 'output.zip'" />
   </Target>
+
+  <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
 
 </Project>

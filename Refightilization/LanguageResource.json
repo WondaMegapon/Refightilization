@@ -1,0 +1,36 @@
+{
+  "en": {
+    "reviveMessages": [
+      "{0} has inhabited the body of a {1}!",
+      "{0} became a {1}.",
+      "{0} has decided to live as a {1}!",
+      "{0} faces the karmic consequences of the life they have lead, now reincarnating into a {1}.",
+      "Ashes to ashes, {0} to {1}.",
+      "After years of soul searching (and recent untimely demise), {0} has successfully transitioned into a {1}.",
+      "The teams have been auto-balanced. {0} is now {1}.",
+      "{0} has been Isekai'd into a {1}.",
+      "Mithrix has decided {0} should be a {1} instead.",
+      "Reject {0}, become {1}.",
+      "Uh Oh! {0} just got {1}! Tag your friends to totally {1} them!",
+      "{0} Consumed the Millenium Pizza, mutating into a {1}.",
+      "Obtuse, Rubber Goose, {0}, {1}.",
+      "{1} is the new {0}.",
+      "{1} Pizza, left {0}.",
+      "Hey, {0} died. Now look at their stupid face, they're a {1} now.",
+      "{0} spawned as a {1}. Hope it was what killed them because that sounds funny.",
+      "Sussy {1}."
+    ],
+    "revengeMessages": [
+      "{0} has killed {1}! They will live again!",
+      "{0} brutalized {1}. They are rewarded with life.",
+      "{1}, Mom says it's {0}'s turn being alive.",
+      "{1} deemed too \"sus\". Starting immediately: {0} is their replacement.",
+      "{1} may die, but that is a sacrifice {0} is willing to make.",
+      "{0} has elected to borrow {1}'s soul with no ETA on its return.",
+      "{1} got dunked on by {0}.",
+      "{0} pulled to ol' swicharoo on {1}.",
+      "As a result of toxic behaviour, {1}'s account has been suspended. If you have any complaints, please issue them to {0} in person.",
+      "{1} will now be replaced with {0} until further notice. Thank you for your cooperation."
+    ]
+  }
+}

@@ -21,7 +21,7 @@ If you ever want to mess with this mod while in single player, there are some co
 
 - Artifact of Metamorphosis will spawn you as a random survivor as opposed to a random monster.
 - Incompatibility with ArtificerExtended while TakeAffix is enabled.
-- Commencement is bugged and requires monster players to be in the escape zone in order to complete the game.
+- Commencement may be bugged and requires monster players to be in the escape zone in order to complete the game.
 
 # Contact
 
@@ -40,6 +40,8 @@ Thanks to Lux, EnderGrimm and Gaforb for providing tons of feedback to help make
 Thanks to Nebby for giving advice on making the mod better compatible with other mods, and for helping with some errors with VarianceAPI.
 
 # Changelog
+
+1.0.14 - 
 
 1.0.13 - Optimized monster selection and enabled support for modded aspects.
 
