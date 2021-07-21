@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Linq;
 using UnityEngine;
-using SimpleJSON;
 using VarianceAPI;
 using VarianceAPI.Components;
 using VarianceAPI.Scriptables;
@@ -22,7 +21,6 @@ namespace Wonda
     [BepInDependency("com.ThinkInvisible.TILER2", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.ThinkInvisible.ClassicItems", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.DestroyedClone.AncientScepter", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInIncompatibility("com.kking117.ArtifactOfGrief")]
     [BepInPlugin(guid, modName, version)]
     public class Refightilization : BaseUnityPlugin
     {
@@ -324,10 +322,10 @@ namespace Wonda
                     if (!player.isDead)
                     {
                         player.isDead = true;
-                        player.master.teamIndex = (TeamIndex)_config.RespawnTeam;
                         player.inventory.CopyItemsFrom(player.master.inventory);
                         if (_config.RemoveAllItems) player.master.inventory.CopyItemsFrom(new Inventory());
                     }
+                    player.master.teamIndex = (TeamIndex)_config.RespawnTeam; // Moved out here in-case config is changed mid-game.
                     respawnLoops = 0;
                     RefightRespawn(player.master, deathPos); // Begin respawning the player.
                 }

@@ -35,7 +35,8 @@
       "{0} wanted a cookie, but {1} will do nicely.",
       "{0} has revoked {1}'s free trial of life.",
       "{1} was a Beetle compared to {0}'s strength.",
-      "{1} did not want to exist. {0} did them a favor."
+      "{1} did not want to exist. {0} did them a favor.",
+      "\"lol\" said {0} to {1}, \"lmao\"."
     ]
   }
 }

@@ -13,8 +13,8 @@ If you ever want to mess with this mod while in single player, there are some co
 | Key | Value | Reason |
 |---|---|---|
 |EndGameWhenEverybodyDead|false|This will allow the game to not end after death.|
-|RespawnDelay|0.0|It's very boring to wait.|
-|RespawnTeam|1|The run would be softlocked because you can't charge the teleporter.|
+|RespawnDelay|0.0|It's boring to wait.|
+|RespawnTeam|Player|The run would be softlocked because you can't charge the teleporter.|
 |AdditionalRespawnTime|0.0|Once again, it's *very* boring to wait.|
 
 # Issues
@@ -39,9 +39,11 @@ Thanks to Lux, EnderGrimm and Gaforb for providing tons of feedback to help make
 
 Thanks to Nebby for giving advice on making the mod better compatible with other mods, and for helping with some errors with VarianceAPI.
 
+Thanks to Shower and Infinityhero for coming up with amazing revive messages.
+
 # Changelog
 
-1.0.14 - 
+1.0.14 - Updated README. Added multiple revive messages. Reverted incompatibility with ArtifactOfGrief.
 
 1.0.13 - Optimized monster selection and enabled support for modded aspects.
 
