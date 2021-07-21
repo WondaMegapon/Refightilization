@@ -1,4 +1,5 @@
-﻿# Info
+﻿
+# Info
 
 Allows players to respawn as a monster when they die. Highly configurable.
 
