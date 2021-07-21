@@ -227,9 +227,6 @@ namespace Wonda
         private void SetupLang()
         {
             _language = new RefightilizationLanguage();
-            Logger.LogInfo(Language.currentLanguageName);
-            Logger.LogInfo(_language.RevengeMessages.Count);
-            Logger.LogInfo(_language.ReviveMessages.Count);
         }
 
         // Beginning the *actual* custom code.

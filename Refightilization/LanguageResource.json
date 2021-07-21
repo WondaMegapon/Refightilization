@@ -12,13 +12,14 @@
       "Mithrix has decided {0} should be a {1} instead.",
       "Reject {0}, become {1}.",
       "Uh Oh! {0} just got {1}! Tag your friends to totally {1} them!",
-      "{0} Consumed the Millenium Pizza, mutating into a {1}.",
+      "{0} consumed the Millennium Pizza, mutating into a {1}.",
       "Obtuse, Rubber Goose, {0}, {1}.",
       "{1} is the new {0}.",
       "{1} Pizza, left {0}.",
       "Hey, {0} died. Now look at their stupid face, they're a {1} now.",
       "{0} spawned as a {1}. Hope it was what killed them because that sounds funny.",
-      "Sussy {1}."
+      "Sussy {1}.",
+      "{0} has emerged. Fund their Kickstarter."
     ],
     "revengeMessages": [
       "{0} has killed {1}! They will live again!",
@@ -30,7 +31,11 @@
       "{1} got dunked on by {0}.",
       "{0} pulled to ol' swicharoo on {1}.",
       "As a result of toxic behaviour, {1}'s account has been suspended. If you have any complaints, please issue them to {0} in person.",
-      "{1} will now be replaced with {0} until further notice. Thank you for your cooperation."
+      "{1} will now be replaced with {0} until further notice. Thank you for your cooperation.",
+      "{0} wanted a cookie, but {1} will do nicely.",
+      "{0} has revoked {1}'s free trial of life.",
+      "{1} was a Beetle compared to {0}'s strength.",
+      "{1} did not want to exist. {0} did them a favor."
     ]
   }
 }
