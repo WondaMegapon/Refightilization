@@ -1,7 +1,7 @@
 ﻿
 # Info
 
-Allows players to respawn as a monster when they die. Highly configurable.
+Allows players to respawn as a monster when they die. Highly configurable. Only the server host needs the mod.
 
 # Video
 

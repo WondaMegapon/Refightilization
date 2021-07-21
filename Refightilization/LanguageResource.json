@@ -11,7 +11,7 @@
       "{0} has been Isekai'd into a {1}.",
       "Mithrix has decided {0} should be a {1} instead.",
       "Reject {0}, become {1}.",
-      "Uh Oh! {0} just got {1}! Tag your friends to totally {1} them!",
+      "Uh Oh! {0} just got {1}'ed! Tag your friends to totally {1} them!",
       "{0} consumed the Millennium Pizza, mutating into a {1}.",
       "Obtuse, Rubber Goose, {0}, {1}.",
       "{1} is the new {0}.",
@@ -19,7 +19,9 @@
       "Hey, {0} died. Now look at their stupid face, they're a {1} now.",
       "{0} spawned as a {1}. Hope it was what killed them because that sounds funny.",
       "Sussy {1}.",
-      "{0} has emerged. Fund their Kickstarter."
+      "{0} has emerged. Fund their Kickstarter.",
+      "There is no {0}. Only {1} now.",
+      "It was all a dream. {0} Wakes up to discover they are still a {1} sunning on a red rock. Time to eat a bug."
     ],
     "revengeMessages": [
       "{0} has killed {1}! They will live again!",
@@ -29,14 +31,15 @@
       "{1} may die, but that is a sacrifice {0} is willing to make.",
       "{0} has elected to borrow {1}'s soul with no ETA on its return.",
       "{1} got dunked on by {0}.",
-      "{0} pulled to ol' swicharoo on {1}.",
+      "{0} pulled the ol' swicharoo on {1}.",
       "As a result of toxic behaviour, {1}'s account has been suspended. If you have any complaints, please issue them to {0} in person.",
       "{1} will now be replaced with {0} until further notice. Thank you for your cooperation.",
       "{0} wanted a cookie, but {1} will do nicely.",
       "{0} has revoked {1}'s free trial of life.",
       "{1} was a Beetle compared to {0}'s strength.",
       "{1} did not want to exist. {0} did them a favor.",
-      "\"lol\" said {0} to {1}, \"lmao\"."
+      "\"lol\" said {0} to {1}, \"lmao\".",
+      "And lo, {0} hath declared: \"{1}, thou'st doth suck at video games.\""
     ]
   }
 }
