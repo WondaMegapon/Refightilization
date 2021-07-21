@@ -12,6 +12,8 @@ namespace Wonda
         private readonly ConfigEntry<bool> _allowBosses;
         private readonly ConfigEntry<bool> _allowScavengers;
         private readonly ConfigEntry<string> _blacklistedEnemies;
+        private readonly ConfigEntry<int> _bossRequiredLoopCount;
+        private readonly ConfigEntry<int> _scavangerRequiredLoopCount;
 
         private readonly ConfigEntry<float> _respawnDelay;
         private readonly ConfigEntry<RoR2.TeamIndex> _respawnTeam;
@@ -43,6 +45,8 @@ namespace Wonda
         public bool AllowBosses { get => _allowBosses.Value; }
         public bool AllowScavengers { get => _allowScavengers.Value; }
         public string[] BlacklistedEnemies { get => _blacklistedEnemies.Value.Replace(" ", "").Split(','); }
+        public int BossRequiredLoopCount { get => _bossRequiredLoopCount.Value; }
+        public int ScavangerRequiredLoopCount { get => _scavangerRequiredLoopCount.Value; }
 
         public float RespawnDelay { get => _respawnDelay.Value; }
         public RoR2.TeamIndex RespawnTeam { get => _respawnTeam.Value; }
@@ -76,6 +80,8 @@ namespace Wonda
             _allowBosses = config.Bind("Monster Categories", "AllowBosses", true, "Allows players to spawn as bosses.");
             _allowScavengers = config.Bind("Monster Categories", "AllowScavengers", false, "Allows players to spawn as Scavengers.");
             _blacklistedEnemies = config.Bind("Monster Categories", "BlacklistedEnemies", "BeetleBody, JellyfishBody, WispBody", "Sets monsters to prevent players from spawning as. A list of bodies can be grabbed by using body_list in the console.");
+            _bossRequiredLoopCount = config.Bind("Monster Categories", "BossRequiredLoopCount", 2, "The required amount of loops before a player can spawn as a boss.");
+            _scavangerRequiredLoopCount = config.Bind("Monster Categories", "ScavangerRequiredLoopCount", 5, "The required amount of loops before a player can spawn as a scavanger.");
 
             _respawnDelay = config.Bind("Respawn Settings", "RespawnDelay", 5f, "Sets the delay until the player can respawn.");
             _respawnTeam = config.Bind("Respawn Settings", "RespawnTeam", RoR2.TeamIndex.Neutral, "Sets the team of the respawned players.");

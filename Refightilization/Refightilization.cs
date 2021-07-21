@@ -30,7 +30,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.14";
+        const string version = "1.0.15";
 
         // Config
         private RefightilizationConfig _config;
@@ -569,10 +569,10 @@ namespace Wonda
                 Logger.LogInfo("We have found " + currMonsterBody.name + ".");
 
                 // Nuking any unwanted Champions.
-                if (!(_config.AllowBosses && Run.instance.loopClearCount >= 2) && currMonsterBody.GetComponent<CharacterBody>().isChampion) continue;
+                if (!(_config.AllowBosses && Run.instance.loopClearCount >= _config.BossRequiredLoopCount) && currMonsterBody.GetComponent<CharacterBody>().isChampion) continue;
 
                 // Nuking any unwanted Scavangers.
-                if (!(_config.AllowScavengers && Run.instance.loopClearCount >= 5) && currMonsterBody.name == "ScavengerBody") continue;
+                if (!(_config.AllowScavengers && Run.instance.loopClearCount >= _config.ScavangerRequiredLoopCount) && currMonsterBody.name == "ScavengerBody") continue;
 
                 // Is it in our Blacklist?
                 if (CheckBlacklist(currMonsterBody.name)) continue;
