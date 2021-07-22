@@ -64,7 +64,7 @@ namespace Wonda
         public bool metamorphosIsEnabled; // For tracking the artifact of the same name.
         private int respawnLoops; // Will break out of the function if it runs into too many of these.
         public List<GameObject> currEnemyWhitelist = new List<GameObject>(); // For optimization, keeping track of the current stage's whitelist.
-        public List<EquipmentIndex> currEliteWhitelist = new List<EquipmentIndex>();
+        public List<EquipmentIndex> currEliteWhitelist = new List<EquipmentIndex>(); // Another optimization, keeping track of the current stage's elites.
 
         public void Awake()
         {

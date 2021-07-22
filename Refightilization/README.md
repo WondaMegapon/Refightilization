@@ -44,6 +44,8 @@ Thanks to Shower and Infinityhero for coming up with amazing revive messages.
 
 # Changelog
 
+1.0.15 - Added config options for Champion and Scavanger respawn requirements. Overhauled Affixes, now they accurately reflect the current stage's elite pool.
+
 1.0.14 - Updated README. Added multiple revive messages. Reverted incompatibility with ArtifactOfGrief.
 
 1.0.13 - Optimized monster selection and enabled support for modded aspects.
