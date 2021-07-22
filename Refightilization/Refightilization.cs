@@ -63,7 +63,8 @@ namespace Wonda
         public float respawnTime; // For an added penalty per death.
         public bool metamorphosIsEnabled; // For tracking the artifact of the same name.
         private int respawnLoops; // Will break out of the function if it runs into too many of these.
-        public List<GameObject> currWhitelist = new List<GameObject>(); // For optimization, keeping track of the current stage's whitelist.
+        public List<GameObject> currEnemyWhitelist = new List<GameObject>(); // For optimization, keeping track of the current stage's whitelist.
+        public List<EquipmentIndex> currEliteWhitelist = new List<EquipmentIndex>();
 
         public void Awake()
         {
@@ -139,6 +140,7 @@ namespace Wonda
             metamorphosIsEnabled = RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.randomSurvivorOnRespawnArtifactDef); // Double checking the current artifact
             if (self.stageClearCount > 0) ResetPrefabs(); // Gotta make sure players respawn as their desired class.
             Invoke("UpdateStageWhitelist", 1f); // Gotta make sure we have an accurate monster selection.
+            Invoke("UpdateEliteWhitelist", 1f); // Gotta make sure we have an accurate elite selection.
             respawnTime = _config.RespawnDelay; // Setting our wacky respawn delay.
         }
 
@@ -384,13 +386,13 @@ namespace Wonda
                 FindPlayerStorage(player).giftedAffix = false;
             }
 
-            GameObject randomMonster = currWhitelist[Random.Range(0, currWhitelist.Count - 1)];
+            GameObject randomMonster = currEnemyWhitelist[Random.Range(0, currEnemyWhitelist.Count - 1)];
 
             // Allowing for an easy way to break out of this possible loop of not finding a proper monster.
             if (respawnLoops < _config.MaxRespawnTries)
             {
                 // To prevent players from spawning in as the same monster twice in a row.
-                if (randomMonster.name == player.bodyPrefab.name && _config.NoRepeatRespawns && currWhitelist.Count > 1)
+                if (randomMonster.name == player.bodyPrefab.name && _config.NoRepeatRespawns && currEnemyWhitelist.Count > 1)
                 {
                     Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was already " + randomMonster.name + ". Retrying Respawn.");
                     RefightRespawn(player, deathPos);
@@ -452,7 +454,7 @@ namespace Wonda
             Logger.LogInfo("Respawned " + player.playerCharacterMasterController.networkUser.userName + "!");
 
             // Catching Monster Variants if the host has it disabled.
-            if (!_config.RespawnAsMonsterVariants) RemoveMonsterVariantItems(player);
+            if(!_config.RespawnAsMonsterVariants) RemoveMonsterVariantItems(player);
 
             // Stat changes to allow players to not die instantly when they get into the game.
             player.GetBody().baseMaxHealth *= _config.RespawnHealthMultiplier;
@@ -460,20 +462,22 @@ namespace Wonda
             if (player.GetBody().GetComponent<DeathRewards>()) player.GetBody().GetComponent<DeathRewards>().goldReward *= (uint)_config.RespawnMoneyMultiplier;
             player.GetBody().baseRegen = 1f;
             player.GetBody().levelRegen = 0.2f;
+            Logger.LogInfo("Applied stats.");
 
             // Some fun stuff to allow players to easily get back into combat.
             player.GetBody().AddTimedBuff(RoR2Content.Buffs.ArmorBoost, 15f);
             player.GetBody().AddTimedBuff(RoR2Content.Buffs.CloakSpeed, 30f);
+            Logger.LogInfo("Applied buffs.");
 
             // And Affixes if the player is lucky.
             if (Util.CheckRoll(_config.RespawnAffixChance, player.playerCharacterMasterController.master) || RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.eliteOnlyArtifactDef))
             {
                 if (player.inventory.GetEquipmentIndex() != EquipmentIndex.None) return; // If the player already has an equipment, just skip over 'em.
 
-                int i = Random.Range(0, EliteCatalog.eliteList.Count - 1); // Pick a random Elite index.
-                EquipmentIndex selectedBuff = EliteCatalog.GetEliteDef(EliteCatalog.eliteList[i]).eliteEquipmentDef.equipmentIndex; // Grab the associated equipment.
-                player.inventory.SetEquipmentIndex(selectedBuff); // Apply that equipment.
+                int i = Random.Range(0, currEliteWhitelist.Count - 1); // Pick a random Elite index.
+                player.inventory.SetEquipmentIndex(currEliteWhitelist[i]); // Apply that equipment.
                 FindPlayerStorage(player).giftedAffix = _config.TakeAffix; // Set a variable to take it away.
+                Logger.LogInfo("Gifted affix.");
             }
 
             // Resetting the amount of loops that we've done. 
@@ -549,7 +553,11 @@ namespace Wonda
             Logger.LogInfo("Updating the stage whitelist.");
 
             // Clearing the old stage whitelist.
-            currWhitelist.Clear();
+            currEnemyWhitelist.Clear();
+            Logger.LogInfo("Whitelist cleared.");
+
+            if(ClassicStageInfo.instance == null) return;
+            Logger.LogInfo("Selection isn't null.");
 
             // Grabbing a reference liiist.
             var list = ClassicStageInfo.instance.monsterSelection.choices.ToList();
@@ -558,6 +566,9 @@ namespace Wonda
             foreach (var choice in list)
             {
                 Logger.LogInfo("Testing choice.");
+
+                // First First, we check to see if choice and value are null. Never leave an NRE unturned.
+                if (choice.value == null) continue;
 
                 // First, we grab the SpawnCard of our monster.
                 SpawnCard currMonster = choice.value.spawnCard;
@@ -578,12 +589,57 @@ namespace Wonda
                 if (CheckBlacklist(currMonsterBody.name)) continue;
 
                 // Add that rad dude!
-                currWhitelist.Add(currMonsterBody);
+                currEnemyWhitelist.Add(currMonsterBody);
                 Logger.LogInfo("Adding " + currMonsterBody.name + " to the currWhitelist.");
             }
 
             // Bring out the backup dude if nothing works.
-            if (currWhitelist.Count <= 0) currWhitelist.Add(BodyCatalog.FindBodyPrefab("LemurianBody"));
+            if (currEnemyWhitelist.Count <= 0) currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("LemurianBody"));
+            Logger.LogInfo("Done updating Whitelist.");
+        }
+
+        // Updating the *other* whitelist.
+        private void UpdateEliteWhitelist()
+        {
+            Logger.LogInfo("Updating the Elite whitelist.");
+
+            // Checking to see if we even have a combat director in the first place.
+            if(CombatDirector.instancesList == null && CombatDirector.instancesList[0] == null) return;
+
+            // Clearing the old whitelist.
+            currEliteWhitelist.Clear();
+
+            // Grabbing our reference to EliteTiers
+            CombatDirector.EliteTierDef[] refDef = CombatDirector.eliteTiers;
+
+            // A final lil' check to see if our EliteTiers are null.
+            if(refDef == null || refDef.Length <= 0) return;
+
+            // The big bad loop. First iterating over all the main tiers.
+            for (var i = 0; i < refDef.Length; i++)
+            {
+                // If the tier is available, then we chuck it in.
+                if (refDef[i].isAvailable(SpawnCard.EliteRules.Default) || refDef[i].isAvailable(SpawnCard.EliteRules.Lunar))
+                {
+                    // Iterating over each individual elite.
+                    for (var v = 0; v < refDef[i].eliteTypes.Length; v++)
+                    {
+                        // Checking to see if the elite type is even valid in the first place because there are inexplicable voids in the game.
+                        if (refDef[i].eliteTypes[v] == null) continue;
+
+                        // Checking to see if the elite has any valid equipment.
+                        if (refDef[i].eliteTypes[v].eliteEquipmentDef == null) continue;
+
+                        // Checking to see if it has a valid icon (it's the only real way I can tell if it's meant to be implemented or not)
+                        if (refDef[i].eliteTypes[v].eliteEquipmentDef.pickupIconSprite == null) continue;
+
+                        // Adding the index to our list.
+                        currEliteWhitelist.Add(refDef[i].eliteTypes[v].eliteEquipmentDef.equipmentIndex);
+
+                        Logger.LogInfo("Added " + refDef[i].eliteTypes[v].eliteEquipmentDef.nameToken + " to the pool.");
+                    }
+                }
+            }
             Logger.LogInfo("Done updating Whitelist.");
         }
 
