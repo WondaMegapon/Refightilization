@@ -17,6 +17,7 @@ If you ever want to mess with this mod while in single player, there are some co
 |RespawnDelay|0.0|It's boring to wait.|
 |RespawnTeam|Player|The run would be softlocked because you can't charge the teleporter.|
 |AdditionalRespawnTime|0.0|Once again, it's *very* boring to wait.|
+|NoRespawnsAfterTeleporter|false|If you somehow die after the teleporter event finishes, you won't be able to respawn.|
 
 # Issues
 

@@ -129,7 +129,7 @@ namespace Wonda
 
                 Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cWorldEvent><sprite name=\"Skull\" tint=1> " + messageText + " <sprite name=\"Skull\" tint=1></style>" });
             }
-            StartCoroutine(RespawnCheck(victimNetworkUser.master.transform.position)); // Spawning in players shortly after a delay.
+            StartCoroutine(RespawnCheck(victimNetworkUser.master.transform.position, respawnTime)); // Spawning in players shortly after a delay.
             respawnTime += _config.AdditionalRespawnTime;
         }
 
@@ -271,16 +271,17 @@ namespace Wonda
                 Logger.LogInfo(newPlayer.user.userName + " added to PlayerStorage!");
             }
             Logger.LogInfo("Setting up players finished.");
-            if (!StageUpdate) StartCoroutine(RespawnCheck(new Vector3(0, 0, 0)));
+            if (!StageUpdate) StartCoroutine(RespawnCheck(new Vector3(0, 0, 0), respawnTime));
         }
 
         // Checking for dead players, and respawning them if it seems like they're respawnable.
-        IEnumerator RespawnCheck(Vector3 deathPos = new Vector3())
+        IEnumerator RespawnCheck(Vector3 deathPos = new Vector3(), float waitTime = 1f)
         {
-            Logger.LogInfo("Respawn called! Waiting " + respawnTime + " seconds!");
+            Logger.LogInfo("Respawn called! Waiting " + waitTime + " seconds!");
 
-            yield return new WaitForSeconds(respawnTime);
+            yield return new WaitForSeconds(waitTime);
 
+            // ABORT ABORT THE GAME DOESN'T EXIST
             if (!Run.instance.isActiveAndEnabled) yield break;
 
             // Wait... Yea disable functionality if the mod is disabled.
@@ -315,21 +316,33 @@ namespace Wonda
                 {
                     Logger.LogInfo("Player doesn't exist! Skipping...");
                     playerStorage.Remove(player); // This was quickly spledged in and is untested. It'll probably break *everything* if a player leaves mid-game... It probably does already.
-                    RespawnCheck(deathPos);
+                    RespawnCheck(deathPos, waitTime);
                     yield break;
                 }
 
                 if (player.master.IsDeadAndOutOfLivesServer())
                 {
                     Logger.LogInfo(player.user.userName + " passed spawn check!");
+
+                    // Testing to see if the player is preventing us from having a game-over. (Possible endless loop if we aren't careful?)
+                    if (player.master.preventGameOver)
+                    {
+                        Logger.LogInfo("...except " + player.user.userName + " is preventing a game over, so we'll check again in a few seconds.");
+                        isEverybodyDead = false; // Gotta respect the prevented game over.
+                        StartCoroutine(RespawnCheck(new Vector3(0, 0, 0), (waitTime + 1) * 2)); // Prepping our next check, but a lil' later in case of a loop.
+                        continue; // Skipping right over anything else in-case it's important.
+                    }
+
+                    // Hey! This player hasn't died before!
                     if (!player.isDead)
                     {
-                        player.isDead = true;
-                        player.inventory.CopyItemsFrom(player.master.inventory);
-                        if (_config.RemoveAllItems) player.master.inventory.CopyItemsFrom(new Inventory());
+                        player.isDead = true; // They died!
+                        player.inventory.CopyItemsFrom(player.master.inventory); // Copy all their items.
+                        if (_config.RemoveAllItems) player.master.inventory.CopyItemsFrom(new Inventory()); // Nuke them if that's what the player wants.
                     }
+
                     player.master.teamIndex = (TeamIndex)_config.RespawnTeam; // Moved out here in-case config is changed mid-game.
-                    respawnLoops = 0;
+                    respawnLoops = 0; // Setting our loops in-case something breaks in RefightRespawn.
                     RefightRespawn(player.master, deathPos); // Begin respawning the player.
                 }
                 else
@@ -343,8 +356,8 @@ namespace Wonda
             if (isEverybodyDead && !(TeleporterInteraction.instance != null && TeleporterInteraction.instance.isInFinalSequence) && _config.EndGameWhenEverybodyDead)
             {
                 Logger.LogInfo("Everybody is dead. Forcibly ending the game.");
-                ResetPrefabs();
-                Run.instance.BeginGameOver(RoR2Content.GameEndings.StandardLoss);
+                ResetPrefabs(); // Resetting all those prefabs so the game-end screen would be accurate.
+                Run.instance.BeginGameOver(RoR2Content.GameEndings.StandardLoss); // Woooo! Begin that game over!
             }
 
             yield break;
