@@ -62,7 +62,6 @@ namespace Wonda
 
         // Misc variables
         public float respawnTime; // For an added penalty per death.
-        public bool metamorphosIsEnabled; // For tracking the artifact of the same name.
         private int respawnLoops; // Will break out of the function if it runs into too many of these.
         public List<GameObject> currEnemyWhitelist = new List<GameObject>(); // For optimization, keeping track of the current stage's whitelist.
         public List<EquipmentIndex> currEliteWhitelist = new List<EquipmentIndex>(); // Another optimization, keeping track of the current stage's elites.
@@ -107,7 +106,6 @@ namespace Wonda
             orig(self);
             if (!_config.EnableRefightilization) return;
             respawnTime = _config.RespawnDelay; // Making sure that this function exists on a per run basis.
-            metamorphosIsEnabled = RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.randomSurvivorOnRespawnArtifactDef); // Checking to see if the artifact is enabled
             SetupPlayers(); // Gotta make sure players are properly stored once the run begins.
             SetupLang(); // For all of our wacky lines we need said.
         }
@@ -140,7 +138,6 @@ namespace Wonda
             if (_config.EnableRefightilization) StopCoroutine(RespawnCheck());
             orig(self, sceneName);
             if (!_config.EnableRefightilization) return; // Kinda pointless to do anything if the mod is disabled.
-            metamorphosIsEnabled = RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.randomSurvivorOnRespawnArtifactDef); // Double checking the current artifact
             if (self.stageClearCount > 0) ResetPrefabs(); // Gotta make sure players respawn as their desired class.
             Invoke("UpdateStageWhitelist", 1f); // Gotta make sure we have an accurate monster selection.
             Invoke("UpdateEliteWhitelist", 1f); // Gotta make sure we have an accurate elite selection.
@@ -435,10 +432,6 @@ namespace Wonda
 
             Logger.LogInfo("Found body " + randomMonster.name + ".");
 
-            // Is the Artifact of Metamorphosis enabled?
-            if (metamorphosIsEnabled && player.inventory && RoR2Content.Items.InvadingDoppelganger && player.inventory.GetItemCount(RoR2Content.Items.InvadingDoppelganger) <= 0) player.inventory.GiveItem(RoR2Content.Items.InvadingDoppelganger);
-            Logger.LogInfo("Checked for Metamorphosis.");
-
             // Do we have an Ancient Scepter?
             TakeScepter(player);
             Logger.LogInfo("Checked for Ancient Scepter.");
@@ -559,9 +552,6 @@ namespace Wonda
                 player.master.inventory.SetEquipmentIndex(player.previousEquipment);
                 player.giftedAffix = false;
             }
-
-            // Taking back the Invading Doppleganger
-            if (metamorphosIsEnabled && player.inventory.GetItemCount(RoR2Content.Items.InvadingDoppelganger) > 0) player.inventory.RemoveItem(RoR2Content.Items.InvadingDoppelganger);
 
             // Refer to the function names.
             RemoveMonsterVariantItems(player.master);
