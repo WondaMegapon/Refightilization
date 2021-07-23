@@ -21,15 +21,11 @@ If you ever want to mess with this mod while in single player, there are some co
 
 # Issues
 
-- Artifact of Metamorphosis will spawn you as a random survivor as opposed to a random monster.
-- Incompatibility with ArtificerExtended while TakeAffix is enabled.
-- Commencement may be bugged and requires monster players to be in the escape zone in order to complete the game.
+Issues are tracked on the [Github](https://github.com/WondaMegapon/Refightilization/issues). Feel free to leave any suggestions there as well.
 
 # Contact
 
-If you've got *any* problems or suggestions, feel free to leave an issue on the [Github](https://github.com/WondaMegapon/Refightilization/issues).
-
-You can also find me on Discord at `Wonda#2183` in the modding server.
+The [Github](https://github.com/WondaMegapon/Refightilization/issues) is the best place to leave any issues or suggestions. However, if you have any general feedback, feel free to message me on Discord. You can find me at `Wonda#2183` in the modding server.
 
 # Credits
 
