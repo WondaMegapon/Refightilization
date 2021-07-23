@@ -43,6 +43,8 @@ Thanks to Shower and Infinityhero for coming up with amazing revive messages.
 
 # Changelog
 
+1.0.17 - Fixed Artifact of Metamorphosis not respawning players as monsters.
+
 1.0.16 - Added config option for forcibly granting affixes. Respawning now respects preventGameOver (allowing for compatibility with Aetherium's Void Heart).
 
 1.0.15 - Added config options for Champion and Scavanger respawn requirements. Overhauled Affixes, now they accurately reflect the current stage's elite pool.
