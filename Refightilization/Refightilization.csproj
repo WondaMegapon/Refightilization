@@ -24,6 +24,8 @@
     </Reference>
     <Reference Include="HarmonyXInterop">
     </Reference>
+    <Reference Include="HGCSharpUtils">
+    </Reference>
     <Reference Include="MMHOOK_Assembly-CSharp">
     </Reference>
     <Reference Include="Mono.Cecil">

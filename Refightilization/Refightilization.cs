@@ -97,9 +97,11 @@ namespace Wonda
             On.RoR2.TeleporterInteraction.OnInteractionBegin += TeleporterInteraction_OnInteractionBegin;
             On.RoR2.GenericPickupController.AttemptGrant += GenericPickupController_AttemptGrant;
             On.RoR2.CharacterMaster.Respawn += CharacterMaster_Respawn;
+            On.RoR2.CharacterMaster.PickRandomSurvivorBodyPrefab += CharacterMaster_PickRandomSurvivorBodyPrefab;
             On.RoR2.Run.BeginGameOver += Run_BeginGameOver;
         }
 
+        
         private void Run_Start(On.RoR2.Run.orig_Start orig, Run self)
         {
             orig(self);
@@ -205,12 +207,6 @@ namespace Wonda
             else orig(self, body);
         }
 
-        private void Run_BeginGameOver(On.RoR2.Run.orig_BeginGameOver orig, Run self, GameEndingDef gameEndingDef)
-        {
-            if (_config.EnableRefightilization) StopCoroutine(RespawnCheck());
-            if (!(_config.EnableRefightilization && !_config.EndGameWhenEverybodyDead)) orig(self, gameEndingDef);
-        }
-
         private CharacterBody CharacterMaster_Respawn(On.RoR2.CharacterMaster.orig_Respawn orig, CharacterMaster self, Vector3 footPosition, Quaternion rotation)
         {
             if (_config.EnableRefightilization)
@@ -222,6 +218,25 @@ namespace Wonda
                 }
             }
             return orig(self, footPosition, rotation);
+        }
+
+        private GameObject CharacterMaster_PickRandomSurvivorBodyPrefab(On.RoR2.CharacterMaster.orig_PickRandomSurvivorBodyPrefab orig, Xoroshiro128Plus rng, List<UnlockableDef> availableUnlockableDefs, bool allowHidden)
+        {
+            // In-case Metamorphosis is enabled, we have to make sure that the monster is the one that respawns and not the survivor.
+            if (_config.EnableRefightilization) {
+                string currMethod = new StackFrame(6).GetMethod().Name;
+                if (currMethod == "RefightRespawn")
+                {
+                    return currEnemyWhitelist[Random.Range(0, currEnemyWhitelist.Count - 1)];
+                }
+            }
+            return orig(rng, availableUnlockableDefs, allowHidden);
+        }
+
+        private void Run_BeginGameOver(On.RoR2.Run.orig_BeginGameOver orig, Run self, GameEndingDef gameEndingDef)
+        {
+            if (_config.EnableRefightilization) StopCoroutine(RespawnCheck());
+            if (!(_config.EnableRefightilization && !_config.EndGameWhenEverybodyDead)) orig(self, gameEndingDef);
         }
 
         // Not yet the end of hooks, but up here are setup functions, and I need a place to shuffle through language info when neccesary.
