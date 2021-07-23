@@ -26,7 +26,9 @@ If you ever want to mess with this mod while in single player, there are some co
 
 # Contact
 
-If you've got *any* feedback or advice, feel free to reach out via Discord. You can find me at `Wonda#2183` in the modding server.
+If you've got *any* problems or suggestions, feel free to leave an issue on the [Github](https://github.com/WondaMegapon/Refightilization/issues).
+
+You can also find me on Discord at `Wonda#2183` in the modding server.
 
 # Credits
 
@@ -43,6 +45,8 @@ Thanks to Nebby for giving advice on making the mod better compatible with other
 Thanks to Shower and Infinityhero for coming up with amazing revive messages.
 
 # Changelog
+
+1.0.16 - Added config option for forcibly granting affixes.
 
 1.0.15 - Added config options for Champion and Scavanger respawn requirements. Overhauled Affixes, now they accurately reflect the current stage's elite pool.
 

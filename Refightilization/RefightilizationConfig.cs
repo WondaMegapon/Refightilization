@@ -31,6 +31,7 @@ namespace Wonda
         private readonly ConfigEntry<bool> _removeAllItems;
         private readonly ConfigEntry<bool> _returnItemsOnStageChange;
         private readonly ConfigEntry<bool> _takeAffix;
+        private readonly ConfigEntry<bool> _forceGrantAffix;
 
         private readonly ConfigEntry<bool> _murderRevive;
         private readonly ConfigEntry<bool> _announceRespawns;
@@ -64,6 +65,7 @@ namespace Wonda
         public bool RemoveAllItems { get => _removeAllItems.Value; }
         public bool ReturnItemsOnStageChange { get => _returnItemsOnStageChange.Value; }
         public bool TakeAffix { get => _takeAffix.Value; }
+        public bool ForceGrantAffix { get => _forceGrantAffix.Value; }
 
         public bool MurderRevive { get => _murderRevive.Value; }
         public bool AnnounceRespawns { get => _announceRespawns.Value; }
@@ -99,6 +101,7 @@ namespace Wonda
             _removeAllItems = config.Bind("Item Settings", "RemoveAllItems", false, "Will remove all items in a player's inventory when they respawn.");
             _returnItemsOnStageChange = config.Bind("Item Settings", "ReturnItemsOnStageChange", true, "If RemoveAllItems is enabled, will allow removed items to be returned when the stage changes.");
             _takeAffix = config.Bind("Item Settings", "TakeAffix", true, "Will take away granted affixes upon respawning.");
+            _forceGrantAffix = config.Bind("Item Settings", "ForceGrantAffix", false, "Will forcibly give the player an aspect, even if they have an equipment item.");
 
             _murderRevive = config.Bind("Behavior", "MurderRevive", true, "Will respawn a dead player as a survivor if they kill another player.");
             _announceRespawns = config.Bind("Behavior", "AnnounceRespawns", true, "Will announce a player respawning in the chat.");

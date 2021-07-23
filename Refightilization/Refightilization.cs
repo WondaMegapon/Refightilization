@@ -54,6 +54,7 @@ namespace Wonda
             public Inventory inventory;
             public bool giftedAffix;
             public bool hadAncientScepter;
+            public EquipmentIndex previousEquipment = EquipmentIndex.None;
         }
 
         // The actual class to use.
@@ -411,10 +412,7 @@ namespace Wonda
             Logger.LogInfo("Checked for Metamorphosis.");
 
             // Do we have an Ancient Scepter?
-            if (_classicItems != null)
-                TakeScepterCI(player);
-            if (_standaloneAncientScepter != null)
-                TakeScepterSAS(player);
+            TakeScepter(player);
             Logger.LogInfo("Checked for Ancient Scepter.");
 
             // Assigning the player to the selected monster prefab.
@@ -472,8 +470,9 @@ namespace Wonda
             // And Affixes if the player is lucky.
             if (Util.CheckRoll(_config.RespawnAffixChance, player.playerCharacterMasterController.master) || RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.eliteOnlyArtifactDef))
             {
-                if (player.inventory.GetEquipmentIndex() != EquipmentIndex.None) return; // If the player already has an equipment, just skip over 'em.
+                if (player.inventory.GetEquipmentIndex() != EquipmentIndex.None && !_config.ForceGrantAffix) return; // If the player already has an equipment, just skip over 'em.
 
+                if (_config.ForceGrantAffix) FindPlayerStorage(player).previousEquipment = player.inventory.GetEquipmentIndex(); // Record their current equipment if ForceGrantAffix is enabled 
                 int i = Random.Range(0, currEliteWhitelist.Count - 1); // Pick a random Elite index.
                 player.inventory.SetEquipmentIndex(currEliteWhitelist[i]); // Apply that equipment.
                 FindPlayerStorage(player).giftedAffix = _config.TakeAffix; // Set a variable to take it away.
@@ -523,27 +522,27 @@ namespace Wonda
         // Removes items from players.
         private void CleanPlayer(PlayerStorage player)
         {
-            player.master.bodyPrefab = player.origPrefab;
-            player.master.teamIndex = TeamIndex.Player;
+            player.master.bodyPrefab = player.origPrefab; // Resetting their prefab.
+            player.master.teamIndex = TeamIndex.Player; // Putting them back on the player team.
 
+            // Taking back that affix.
             if (player.giftedAffix)
             {
-                player.master.inventory.SetEquipmentIndex(EquipmentIndex.None);
+                player.master.inventory.SetEquipmentIndex(player.previousEquipment);
                 player.giftedAffix = false;
             }
 
+            // Taking back the Invading Doppleganger
             if (metamorphosIsEnabled && player.inventory.GetItemCount(RoR2Content.Items.InvadingDoppelganger) > 0) player.inventory.RemoveItem(RoR2Content.Items.InvadingDoppelganger);
 
+            // Refer to the function names.
             RemoveMonsterVariantItems(player.master);
+            GiveScepter(player.master);
 
-            if (_classicItems != null)
-                GiveScepterCI(player.master);
-            if (_standaloneAncientScepter != null)
-                GiveScepterSAS(player.master);
+            if (_config.RemoveAllItems && _config.ReturnItemsOnStageChange) player.master.inventory.AddItemsFrom(player.inventory); // Add the player's items back to their inventory, incase they find new items as a monster.
+            if (_config.ForceItemRestoration) player.master.inventory.CopyItemsFrom(player.inventory); // Replace the player's items with their old equipment, nuking any existing inventory.
 
-            if (_config.RemoveAllItems && _config.ReturnItemsOnStageChange) player.master.inventory.AddItemsFrom(player.inventory);
-            if (_config.ForceItemRestoration) player.master.inventory.CopyItemsFrom(player.inventory);
-
+            // Yay! They're no longer dead!
             player.isDead = false;
         }
 
@@ -793,6 +792,18 @@ namespace Wonda
             {
                 Logger.LogInfo("Finished " + variantHandler.identifierName + ". Proceeding to next item in the list.");
             }
+        }
+
+        private void TakeScepter(CharacterMaster player)
+        {
+            if (_classicItems != null) TakeScepterCI(player);
+            if (_standaloneAncientScepter != null) TakeScepterSAS(player);
+        }
+
+        private void GiveScepter(CharacterMaster player)
+        {
+            if (_classicItems != null) GiveScepterCI(player);
+            if (_standaloneAncientScepter != null) GiveScepterSAS(player);
         }
 
         // This one is for Classic Items. It takes the player's Scepter.
