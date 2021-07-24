@@ -77,7 +77,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="cd $(TargetDir)&#xD;&#xA;if exist output.zip (del output.zip)&#xD;&#xA;powershell Compress-Archive -Path '$(TargetFileName)', 'icon.png', 'manifest.json', 'manifestv2.json', 'README.md', 'LanguageResource.json' -DestinationPath 'output.zip'" />
+    <Exec Command="cd $(TargetDir)&#xD;&#xA;if exist output.zip (del output.zip)&#xD;&#xA;powershell Compress-Archive -Path '$(TargetFileName)', 'icon.png', 'manifest.json', 'manifestv2.json', 'README.md', 'LanguageResource.json' -DestinationPath 'output.zip'&#xD;&#xA;copy $(TargetFileName) C:\Users\Wonda\AppData\Roaming\r2modmanPlus-local\RiskOfRain2\profiles\Debug\BepInEx\plugins\Wonda-Refightilization\$(TargetFileName)" />
   </Target>
 
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
