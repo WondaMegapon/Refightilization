@@ -64,6 +64,7 @@ namespace Wonda
         public float respawnTime; // For an added penalty per death.
         private int respawnLoops; // Will break out of the function if it runs into too many of these.
         public List<GameObject> currEnemyWhitelist = new List<GameObject>(); // For optimization, keeping track of the current stage's whitelist.
+        private List<GameObject> tempEnemyWhitelist = new List<GameObject>(); // Another optimization, to prevent the game from looping over several repeated monsters.
         public List<EquipmentIndex> currEliteWhitelist = new List<EquipmentIndex>(); // Another optimization, keeping track of the current stage's elites.
 
         public void Awake()
@@ -408,7 +409,7 @@ namespace Wonda
             if (FindPlayerStorage(player).giftedAffix)
             {
                 Logger.LogInfo("Yoinking that Affix.");
-                player.inventory.SetEquipmentIndex(EquipmentIndex.None);
+                player.inventory.SetEquipmentIndex(FindPlayerStorage(player).previousEquipment);
                 FindPlayerStorage(player).giftedAffix = false;
             }
 
@@ -482,6 +483,31 @@ namespace Wonda
             player.GetBody().baseRegen = 1f;
             player.GetBody().levelRegen = 0.2f;
             Logger.LogInfo("Applied stats.");
+
+            // Let's just double-check that the player has an Interactor.
+            if (!player.GetBody().GetComponent<InteractionDriver>())
+            {
+                player.GetBody().gameObject.AddComponent<InteractionDriver>();
+            }
+
+            // Oh! And fixing up their interactor so they can reach things that are just a *little* outta reach*.
+            if (player.GetBody().GetComponent<Interactor>())
+            {
+                Interactor interactor = player.GetBody().GetComponent<Interactor>();
+
+                // Getting the player's model size and using that to base the selection size off of.
+                Vector3 vec = player.GetBody().modelLocator.modelTransform.GetComponent<CharacterModel>().mainSkinnedMeshRenderer.bounds.size;
+                float var = Mathf.Max(Mathf.Max(vec.x, vec.y), vec.z);
+                interactor.maxInteractionDistance = var;
+
+                // Next, we give flying enemies extra distance.
+                if (player.GetBody().isFlying)
+                    interactor.maxInteractionDistance *= 1.5f;
+
+                // Aaaand an edge case, in-case they're immobile.
+                if (player.GetBody().GetComponent<CharacterMotor>().walkSpeed <= 0)
+                    interactor.maxInteractionDistance = 10000f;
+            }
 
             // Some fun stuff to allow players to easily get back into combat.
             player.GetBody().AddTimedBuff(RoR2Content.Buffs.ArmorBoost, 15f);
