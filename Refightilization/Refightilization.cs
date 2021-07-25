@@ -64,7 +64,6 @@ namespace Wonda
         public float respawnTime; // For an added penalty per death.
         private int respawnLoops; // Will break out of the function if it runs into too many of these.
         public List<GameObject> currEnemyWhitelist = new List<GameObject>(); // For optimization, keeping track of the current stage's whitelist.
-        private List<GameObject> tempEnemyWhitelist = new List<GameObject>(); // Another optimization, to prevent the game from looping over several repeated monsters.
         public List<EquipmentIndex> currEliteWhitelist = new List<EquipmentIndex>(); // Another optimization, keeping track of the current stage's elites.
 
         public void Awake()
@@ -413,13 +412,18 @@ namespace Wonda
                 FindPlayerStorage(player).giftedAffix = false;
             }
 
-            GameObject randomMonster = currEnemyWhitelist[Random.Range(0, currEnemyWhitelist.Count - 1)];
+            // Another optimization, to prevent the game from looping over several repeated monsters.
+            List<GameObject> tempEnemyWhitelist = currEnemyWhitelist; 
+            if (_config.NoRepeatRespawns && currEnemyWhitelist.Count > 1) tempEnemyWhitelist.Remove(tempEnemyWhitelist.Where(entity => entity.name == player.bodyPrefab.name).FirstOrDefault());
+
+            GameObject randomMonster = tempEnemyWhitelist[Random.Range(0, tempEnemyWhitelist.Count - 1)];
 
             // Allowing for an easy way to break out of this possible loop of not finding a proper monster.
+            /*
             if (respawnLoops < _config.MaxRespawnTries)
             {
                 // To prevent players from spawning in as the same monster twice in a row.
-                if (randomMonster.name == player.bodyPrefab.name && _config.NoRepeatRespawns && currEnemyWhitelist.Count > 1)
+                if (randomMonster.name == player.bodyPrefab.name && _config.NoRepeatRespawns && tempEnemyWhitelist.Count > 1)
                 {
                     Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was already " + randomMonster.name + ". Retrying Respawn.");
                     RefightRespawn(player, deathPos);
@@ -430,6 +434,7 @@ namespace Wonda
             {
                 Logger.LogInfo("Too many retries! Forcibly assigning monster.");
             }
+            */
 
             Logger.LogInfo("Found body " + randomMonster.name + ".");
 
@@ -503,10 +508,6 @@ namespace Wonda
                 // Next, we give flying enemies extra distance.
                 if (player.GetBody().isFlying)
                     interactor.maxInteractionDistance *= 1.5f;
-
-                // Aaaand an edge case, in-case they're immobile.
-                if (player.GetBody().GetComponent<CharacterMotor>().walkSpeed <= 0)
-                    interactor.maxInteractionDistance = 10000f;
             }
 
             // Some fun stuff to allow players to easily get back into combat.
