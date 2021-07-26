@@ -582,7 +582,7 @@ namespace Wonda
 
             // Refer to the function names.
             RemoveMonsterVariantItems(player.master);
-            GiveScepter(player.master);
+            StartCoroutine(GiveScepterWait(player.master, 1f));
 
             if (_config.RemoveAllItems && _config.ReturnItemsOnStageChange) player.master.inventory.AddItemsFrom(player.inventory); // Add the player's items back to their inventory, incase they find new items as a monster.
             if (_config.ForceItemRestoration) player.master.inventory.CopyItemsFrom(player.inventory); // Replace the player's items with their old equipment, nuking any existing inventory.
@@ -843,6 +843,12 @@ namespace Wonda
         {
             if (_classicItems != null) TakeScepterCI(player);
             if (_standaloneAncientScepter != null) TakeScepterSAS(player);
+        }
+
+        private IEnumerator GiveScepterWait(CharacterMaster player, float time)
+        {
+            yield return new WaitForSeconds(time);
+            GiveScepter(player);
         }
 
         private void GiveScepter(CharacterMaster player)
