@@ -43,6 +43,8 @@ Thanks to Shower and Infinityhero for coming up with amazing revive messages.
 
 # Changelog
 
+1.0.19 - Adjusted interaction radius further.
+
 1.0.18 - Gave larger monsters a bigger interaction radius. Fixed returning Ancient Scepter to players. Improved monster selection.
 
 1.0.17 - Fixed Artifact of Metamorphosis not respawning players as monsters.

@@ -30,7 +30,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.18";
+        const string version = "1.0.19";
 
         // Config
         private RefightilizationConfig _config;
@@ -501,7 +501,7 @@ namespace Wonda
                 Interactor interactor = player.GetBody().GetComponent<Interactor>();
 
                 // Getting the player's model size and using that to base the selection size off of.
-                Vector3 vec = player.GetBody().modelLocator.modelTransform.GetComponent<CharacterModel>().mainSkinnedMeshRenderer.bounds.size;
+                Vector3 vec = Vector3.Scale(player.GetBody().modelLocator.modelTransform.GetComponent<CharacterModel>().mainSkinnedMeshRenderer.bounds.size, player.GetBody().modelLocator.transform.localScale);
                 float var = Mathf.Max(Mathf.Max(vec.x, vec.y), vec.z);
                 interactor.maxInteractionDistance = var;
 
