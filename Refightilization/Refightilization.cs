@@ -10,7 +10,7 @@ using System.Linq;
 using UnityEngine;
 using VarianceAPI;
 using VarianceAPI.Components;
-using VarianceAPI.Scriptables;
+using VarianceAPI.ScriptableObjects;
 
 namespace Wonda
 {
@@ -30,7 +30,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.19";
+        const string version = "1.0.20";
 
         // Config
         private RefightilizationConfig _config;
@@ -414,7 +414,7 @@ namespace Wonda
 
             // Another optimization, to prevent the game from looping over several repeated monsters.
             List<GameObject> tempEnemyWhitelist = currEnemyWhitelist; 
-            if (_config.NoRepeatRespawns && currEnemyWhitelist.Count > 1) tempEnemyWhitelist.Remove(tempEnemyWhitelist.Where(entity => entity.name == player.bodyPrefab.name).FirstOrDefault());
+            if (_config.NoRepeatRespawns && tempEnemyWhitelist.Count > 1) tempEnemyWhitelist.Remove(tempEnemyWhitelist.Where(entity => entity.name == player.bodyPrefab.name).FirstOrDefault());
 
             GameObject randomMonster = tempEnemyWhitelist[Random.Range(0, tempEnemyWhitelist.Count - 1)];
 
@@ -770,72 +770,42 @@ namespace Wonda
         // Amazing code provided by Nebby. Thank you so much.
         private void RemoveMonsterVariantItemsAPI(CharacterMaster Player)
         {
-            CharacterBody playerBody = Player.GetBody(); //Grab the body, since the components are stored in its gameobject.
-            if ((bool)playerBody)
+            CharacterBody playerBody = Player.GetBody();
+            if (!playerBody) return;
+
+            VariantHandler variantHandler = playerBody.GetComponent<VariantHandler>();
+            if (variantHandler)
             {
-                Logger.LogInfo("Found " + Player.playerCharacterMasterController.networkUser.userName + "'s Body!");
-
-                //We're using LinQ for this. the magic thing about Linq is using the Where method.
-                //It allows us to get only the components that match with our conditional. in this case, we're getting all the VariantHandler components the body has that are active, AKA: isVariant == true.
-                List<VariantHandler> playerVariantHandlers = playerBody.gameObject.GetComponents<VariantHandler>().Where(VH => VH.isVariant == true).ToList();
-                Logger.LogInfo("Obtained Active VariantHandler components from body!");
-
-                //We're going to iterate thru these active variantHandler components and check if their inventory is null or not.
-                foreach (VariantHandler currentVariantHandler in playerVariantHandlers)
+                List<VariantInfo> activeVariantInfos = variantHandler.VariantInfos.ToList();
+                foreach (VariantInfo variantInfo in activeVariantInfos)
                 {
-                    Logger.LogInfo("Checking for variant inventory in " + currentVariantHandler.identifierName);
-
-                    if (currentVariantHandler.inventory == null)
+                    if (variantInfo.variantInventory == null)
                     {
-                        //Inventory is null? then continue to the next element in the array..
-                        Logger.LogInfo(currentVariantHandler.identifierName + "Has no inventory.");
-
-                        //This method checks if the variantHandler's tier is greater or equal to uncommon, if so, it removes the purple healthbar.
-                        CheckForPurpleHealthBar(playerBody.inventory, currentVariantHandler);
-
-                        //We use continue to go to the next item in playerVariantHandlers
+                        CheckForPurpleHealthBar(playerBody.inventory, variantInfo);
                         continue;
                     }
-                    else
+                    else if (variantInfo.variantInventory.ItemInventory.Length > 0)
                     {
-                        Logger.LogInfo(currentVariantHandler.identifierName + " Has an inventory! Removing items!");
-
-                        //Inventory isnt null, store the inventory in a new temporary variable for ease of access.
-                        VariantInventory variantInventory = currentVariantHandler.inventory;
-
-                        //Iterate thru the inventory's arrays. since both variantInventory.counts & variantInventory.ItemStrings are of the same size, we can use the same iteration for both.
-                        for (int i = 0; i < variantInventory.counts.Length; i++)
+                        VariantInventoryInfo.VariantInventory[] itemInventory = variantInfo.variantInventory.ItemInventory;
+                        for (int i = 0; i < itemInventory.Length; i++)
                         {
-                            //Store the current iteration for ease of access.
-                            var currentItemString = variantInventory.itemStrings[i];
-                            var currentItemCount = variantInventory.counts[i];
-
-                            //ItemCatalog can be used to get both the index of an item & the itemDef of an item using its itemString.                  
-                            var itemDef = ItemCatalog.GetItemDef(ItemCatalog.FindItemIndex(currentItemString));
-
-                            //Inventory has its own method for removing items thankfully, but it needs an itemDef, ergo the existence of the line above!
-                            Player.inventory.RemoveItem(itemDef, currentItemCount);
-                            Logger.LogInfo("Removed " + currentItemCount + " " + itemDef.name + " from " + Player.playerCharacterMasterController.networkUser.userName + "'s Inventory");
+                            var current = itemInventory[i];
+                            ItemDef toRemove = ItemCatalog.GetItemDef(ItemCatalog.FindItemIndex(current.itemDefName));
+                            Player.inventory.RemoveItem(toRemove, current.amount);
                         }
-                        CheckForPurpleHealthBar(playerBody.inventory, currentVariantHandler);
+                        CheckForPurpleHealthBar(playerBody.inventory, variantInfo);
                     }
-                    //We're not going to destroy any variantHandler components.
                 }
             }
         }
 
         //Removes the purple healthbar if the tier is greater than common.
-        private void CheckForPurpleHealthBar(Inventory inventory, VariantHandler variantHandler)
+        private void CheckForPurpleHealthBar(Inventory inventory, VariantInfo variantInfo)
         {
-            var purpleHealthBar = VarianceAPI.ContentPackProvider.contentPack.itemDefs.Find("VAPI_PurpleHealthbar");
-            if (variantHandler.tier >= VariantTier.Uncommon)
+            var purpleHealthBar = VarianceAPI.Assets.VAPIAssets.LoadAsset<ItemDef>("PurpleHealthbar");
+            if (variantInfo.variantTier >= VarianceAPI.VariantTier.Uncommon)
             {
-                Logger.LogInfo(variantHandler.identifierName + "'s tier is Uncommon or Greater! Removing PurpleHealthBar.");
                 inventory.RemoveItem(purpleHealthBar, inventory.GetItemCount(purpleHealthBar));
-            }
-            else
-            {
-                Logger.LogInfo("Finished " + variantHandler.identifierName + ". Proceeding to next item in the list.");
             }
         }
 

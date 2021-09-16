@@ -54,6 +54,8 @@
     </Reference>
     <Reference Include="UnityEngine.Networking">
     </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+    </Reference>
     <Reference Include="VarianceAPI">
     </Reference>
   </ItemGroup>
