@@ -30,7 +30,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.0.20";
+        const string version = "1.1.0";
 
         // Config
         private RefightilizationConfig _config;
@@ -98,9 +98,9 @@ namespace Wonda
             On.RoR2.CharacterMaster.Respawn += CharacterMaster_Respawn;
             On.RoR2.CharacterMaster.PickRandomSurvivorBodyPrefab += CharacterMaster_PickRandomSurvivorBodyPrefab;
             On.RoR2.Run.BeginGameOver += Run_BeginGameOver;
+            On.RoR2.InfiniteTowerRun.OnWaveAllEnemiesDefeatedServer += InfiniteTowerRun_OnWaveAllEnemiesDefeatedServer;
         }
 
-        
         private void Run_Start(On.RoR2.Run.orig_Start orig, Run self)
         {
             orig(self);
@@ -232,8 +232,28 @@ namespace Wonda
 
         private void Run_BeginGameOver(On.RoR2.Run.orig_BeginGameOver orig, Run self, GameEndingDef gameEndingDef)
         {
-            if (_config.EnableRefightilization) StopCoroutine(RespawnCheck());
-            if (!(_config.EnableRefightilization && !_config.EndGameWhenEverybodyDead)) orig(self, gameEndingDef);
+            if (!(_config.EnableRefightilization && !_config.EndGameWhenEverybodyDead)) {
+                StopCoroutine(RespawnCheck()); // We no longer need to check for Respawns
+                ResetPrefabs(); // Gotta clean up every player.
+                orig(self, gameEndingDef);
+            }
+        }
+
+        private void InfiniteTowerRun_OnWaveAllEnemiesDefeatedServer(On.RoR2.InfiniteTowerRun.orig_OnWaveAllEnemiesDefeatedServer orig, InfiniteTowerRun self, InfiniteTowerWaveController wc)
+        {
+            foreach(PlayerStorage player in playerStorage)
+            {
+                if (player == null)
+                {
+                    Logger.LogInfo("Player is null! Continuing.");
+                    continue;
+                }
+                if (player.isDead)
+                {
+                    player.master.TrueKill();
+                }
+            }
+            orig(self, wc);
         }
 
         // Not yet the end of hooks, but up here are setup functions, and I need a place to shuffle through language info when neccesary.
@@ -458,24 +478,28 @@ namespace Wonda
             // Grabbing a viable position for the player to spawn in.
             Vector3 newPos = deathPos; // Starting with where the player dies, if all else fails.
 
-            // Attempting to find a position near a player.
-            /*
+            // Radius for our spawning.
+            Vector3 spawnRadius = new Vector3(Random.Range(-5, 5), Random.Range(-5, 5), Random.Range(-2, 2));
+
+            // Grabbing a random active player's location.
             System.Random r = new System.Random();
             foreach (PlayerCharacterMasterController viableSpawn in PlayerCharacterMasterController.instances.OrderBy(x => r.Next()))
             {
                 if (!viableSpawn.master.IsDeadAndOutOfLivesServer() && viableSpawn.master != null)
                 { 
-                    newPos = viableSpawn.master.transform.position + new Vector3(Random.Range(-5, 5), Random.Range(-5, 5), Random.Range(-2, 2));
+                    newPos = viableSpawn.master.transform.position + spawnRadius;
                     break;
                 }
             }
-            */
 
             // If we can't find a position near a player, we'll try a position near the teleporter.
-            if (newPos == deathPos && TeleporterInteraction.instance) newPos = TeleporterInteraction.instance.transform.position + new Vector3(Random.Range(-5, 5), Random.Range(-5, 5), Random.Range(-2, 2));
+            if (newPos == deathPos && TeleporterInteraction.instance) newPos = TeleporterInteraction.instance.transform.position + spawnRadius;
+
+            // Grabbing a safe location nearby that location.
+            newPos = (TeleportHelper.FindSafeTeleportDestination(newPos, player.bodyPrefab.GetComponent<CharacterBody>(), RoR2Application.rng) ?? newPos);
 
             // Respawning that player!
-            player.Respawn(GrabNearestNodePosition(newPos), Quaternion.identity);
+            player.Respawn(newPos, Quaternion.identity);
             Logger.LogInfo("Respawned " + player.playerCharacterMasterController.networkUser.userName + "!");
 
             // Catching Monster Variants if the host has it disabled.
@@ -690,30 +714,6 @@ namespace Wonda
         // Utility Methods
         //
 
-        // Mooooore stolen coooode. Using RoR's ambush generation code to grab the spawn position for players.
-        private Vector3 GrabNearestNodePosition(Vector3 startPos)
-        {
-            NodeGraph groundNodes = SceneInfo.instance.groundNodes;
-            NodeGraph.NodeIndex nodeIndex = groundNodes.FindClosestNode(startPos, HullClassification.BeetleQueen);
-            NodeGraphSpider nodeGraphSpider = new NodeGraphSpider(groundNodes, HullMask.BeetleQueen);
-            nodeGraphSpider.AddNodeForNextStep(nodeIndex);
-
-            List<NodeGraphSpider.StepInfo> list = new List<NodeGraphSpider.StepInfo>();
-            int num = 0;
-            List<NodeGraphSpider.StepInfo> collectedSteps = nodeGraphSpider.collectedSteps;
-            while (nodeGraphSpider.PerformStep() && num < 8)
-            {
-                num++;
-                for (int i = 0; i < collectedSteps.Count; i++)
-                {
-                    list.Add(collectedSteps[i]);
-                }
-                collectedSteps.Clear();
-            }
-            groundNodes.GetNodePosition(list[Random.Range(0, list.Count - 1)].node, out Vector3 outPos);
-            return outPos;
-        }
-
         // A cheap and dirty way of checking to see if a string is in the blacklist.
         private bool CheckBlacklist(string name)
         {
@@ -831,48 +831,48 @@ namespace Wonda
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void TakeScepterCI(CharacterMaster player)
         {
-            if (player.inventory.GetItemCount(ThinkInvisible.ClassicItems.Scepter.instance.itemDef) > 0)
+            /*if (player.inventory.GetItemCount(ThinkInvisible.ClassicItems.Scepter.instance.itemDef) > 0)
             {
                 Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " has a Scepter. Taking it.");
                 FindPlayerStorage(player).hadAncientScepter = true;
                 player.inventory.RemoveItem(ThinkInvisible.ClassicItems.Scepter.instance.itemDef);
-            }
+            }*/
         }
 
         // This one is for Classic Items. It gives the player's Scepter.
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void GiveScepterCI(CharacterMaster player)
         {
-            if (FindPlayerStorage(player).hadAncientScepter)
+            /*if (FindPlayerStorage(player).hadAncientScepter)
             {
                 Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " had a Scepter. Returning it.");
                 player.inventory.GiveItem(ThinkInvisible.ClassicItems.Scepter.instance.itemDef);
                 FindPlayerStorage(player).hadAncientScepter = false;
-            }
+            }*/
         }
 
         // This one is for Standalone AS. Same as before.
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void TakeScepterSAS(CharacterMaster player)
         {
-            if (player.inventory.GetItemCount(AncientScepter.AncientScepterItem.instance.ItemDef) > 0)
+            /*if (player.inventory.GetItemCount(AncientScepter.AncientScepterItem.instance.ItemDef) > 0)
             {
                 Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " has a Scepter. Taking it.");
                 FindPlayerStorage(player).hadAncientScepter = true;
                 player.inventory.RemoveItem(AncientScepter.AncientScepterItem.instance.ItemDef);
-            }
+            }*/
         }
 
         // This one is for Standalone AS. Same as before.
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void GiveScepterSAS(CharacterMaster player)
         {
-            if (FindPlayerStorage(player).hadAncientScepter)
+            /*if (FindPlayerStorage(player).hadAncientScepter)
             {
                 Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " had a Scepter. Returning it.");
                 player.inventory.GiveItem(AncientScepter.AncientScepterItem.instance.ItemDef);
                 FindPlayerStorage(player).hadAncientScepter = false;
-            }
+            }*/
         }
     }
 }

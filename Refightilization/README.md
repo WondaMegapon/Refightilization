@@ -43,6 +43,8 @@ Thanks to Shower and Infinityhero for coming up with amazing revive messages.
 
 # Changelog
 
+1.1.0 - Updated for SotV. Fixed game over screens not reflecting a player's current survivor. Removed Classic Items and Standalone Ancient Scepter compatibility fixes. Players respawn upon a wave ending during Simulacrum.
+
 1.0.20 - Fixed compatibility with VAPI.
 
 1.0.19 - Adjusted interaction radius further.

@@ -12,8 +12,6 @@
     </Reference>
     <Reference Include="AncientScepter">
     </Reference>
-    <Reference Include="Assembly-CSharp">
-    </Reference>
     <Reference Include="BepInEx">
     </Reference>
     <Reference Include="BepInEx.Harmony">
@@ -26,7 +24,7 @@
     </Reference>
     <Reference Include="HGCSharpUtils">
     </Reference>
-    <Reference Include="MMHOOK_Assembly-CSharp">
+    <Reference Include="MMHOOK_RoR2">
     </Reference>
     <Reference Include="Mono.Cecil">
     </Reference>
@@ -44,6 +42,8 @@
     </Reference>
     <Reference Include="R2API">
     </Reference>
+    <Reference Include="RoR2">
+    </Reference>
     <Reference Include="SimpleJSON">
     </Reference>
     <Reference Include="TILER2">
@@ -53,6 +53,8 @@
     <Reference Include="UnityEngine.CoreModule">
     </Reference>
     <Reference Include="UnityEngine.Networking">
+    </Reference>
+    <Reference Include="com.unity.multiplayer-hlapi.Runtime">
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
     </Reference>

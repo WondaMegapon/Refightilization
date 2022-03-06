@@ -81,7 +81,7 @@ namespace Wonda
 
             _allowBosses = config.Bind("Monster Categories", "AllowBosses", true, "Allows players to spawn as bosses.");
             _allowScavengers = config.Bind("Monster Categories", "AllowScavengers", false, "Allows players to spawn as Scavengers.");
-            _blacklistedEnemies = config.Bind("Monster Categories", "BlacklistedEnemies", "BeetleBody, JellyfishBody, WispBody", "Sets monsters to prevent players from spawning as. A list of bodies can be grabbed by using body_list in the console.");
+            _blacklistedEnemies = config.Bind("Monster Categories", "BlacklistedEnemies", "BeetleBody, JellyfishBody, WispBody, MinorConstructBody, VoidBarnacleBody", "Sets monsters to prevent players from spawning as. A list of bodies can be grabbed by using body_list in the console.");
             _bossRequiredLoopCount = config.Bind("Monster Categories", "BossRequiredLoopCount", 2, "The required amount of loops before a player can spawn as a boss.");
             _scavangerRequiredLoopCount = config.Bind("Monster Categories", "ScavangerRequiredLoopCount", 5, "The required amount of loops before a player can spawn as a scavanger.");
 

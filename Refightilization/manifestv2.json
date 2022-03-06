@@ -3,14 +3,14 @@
   "AuthorName": "Wonda",
   "Name": "wonda-Refightilization",
   "DisplayName": "Refightilization",
-  "Version": "1.0.20",
+  "Version": "1.1.0",
   "Licence": "",
   "WebsiteURL": "https://github.com/WondaMegapon/Refightilization/",
   "Description": "Allows players to respawn as a monster when they die.",
   "GameVersion": "N/A",
   "Dependencies": [
-    "bbepis-BepInExPack-5.3.1",
-    "tristanmcpherson-R2API-3.0.30"
+    "bbepis-BepInExPack-5.4.1900",
+    "tristanmcpherson-R2API-4.0.11"
   ],
   "OptionalDependencies": [],
   "Incompatibilities": [],
