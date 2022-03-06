@@ -41,7 +41,11 @@ Thanks to Nebby for giving advice on making the mod better compatible with other
 
 Thanks to Shower and Infinityhero for coming up with amazing revive messages.
 
+Thanks to Cleveryt for the French localization.
+
 # Changelog
+
+1.1.1 - Added French translation.
 
 1.1.0 - Updated for SotV. Fixed game over screens not reflecting a player's current survivor. Removed Classic Items and Standalone Ancient Scepter compatibility fixes. Players respawn upon a wave ending during Simulacrum.
 
