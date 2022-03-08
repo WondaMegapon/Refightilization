@@ -41,9 +41,11 @@ Thanks to Nebby for giving advice on making the mod better compatible with other
 
 Thanks to Shower and Infinityhero for coming up with amazing revive messages.
 
-Thanks to Cleveryt for the French localization.
+Thanks to Cleveryt for the French localization. Thanks to Goleden for the Chinese localization.
 
 # Changelog
+
+1.1.2 - Added Chinese translation.
 
 1.1.1 - Added French translation.
 
