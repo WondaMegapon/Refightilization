@@ -60,10 +60,15 @@ namespace Wonda
         // The actual class to use.
         public List<PlayerStorage> playerStorage = new List<PlayerStorage>();
 
+        // Internal, hardcoded monster lists.
+        private List<GameObject> voidWhitelist = new List<GameObject>();
+        private List<GameObject> finalBossWhitelist = new List<GameObject>();
+
         // Misc variables
         public float respawnTime; // For an added penalty per death.
         private int respawnLoops; // Will break out of the function if it runs into too many of these.
         public List<GameObject> currEnemyWhitelist = new List<GameObject>(); // For optimization, keeping track of the current stage's whitelist.
+        public List<GameObject> currSpecialEnemyWhitelist = new List<GameObject>(); // For optimization, keeping track of the current stage's whitelist.
         public List<EquipmentIndex> currEliteWhitelist = new List<EquipmentIndex>(); // Another optimization, keeping track of the current stage's elites.
         public bool moonDisabled; // For disabling spawning on the moon due to softlocks.
 
@@ -443,28 +448,13 @@ namespace Wonda
             }
 
             // Another optimization, to prevent the game from looping over several repeated monsters.
-            List<GameObject> tempEnemyWhitelist = currEnemyWhitelist; 
+            List<GameObject> tempEnemyWhitelist = currEnemyWhitelist;
+            if (Util.CheckRoll(1, player.playerCharacterMasterController.master) && currSpecialEnemyWhitelist.Count >= 1) tempEnemyWhitelist = new List<GameObject>(currSpecialEnemyWhitelist);
+            if (Util.CheckRoll(0.001f, player.playerCharacterMasterController.master) && finalBossWhitelist.Count >= 1) tempEnemyWhitelist = new List<GameObject>(finalBossWhitelist);
+
             if (_config.NoRepeatRespawns && tempEnemyWhitelist.Count > 1) tempEnemyWhitelist.Remove(tempEnemyWhitelist.Where(entity => entity.name == player.bodyPrefab.name).FirstOrDefault());
 
             GameObject randomMonster = tempEnemyWhitelist[Random.Range(0, tempEnemyWhitelist.Count - 1)];
-
-            // Allowing for an easy way to break out of this possible loop of not finding a proper monster.
-            /*
-            if (respawnLoops < _config.MaxRespawnTries)
-            {
-                // To prevent players from spawning in as the same monster twice in a row.
-                if (randomMonster.name == player.bodyPrefab.name && _config.NoRepeatRespawns && tempEnemyWhitelist.Count > 1)
-                {
-                    Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was already " + randomMonster.name + ". Retrying Respawn.");
-                    RefightRespawn(player, deathPos);
-                    return;
-                }
-            }
-            else
-            {
-                Logger.LogInfo("Too many retries! Forcibly assigning monster.");
-            }
-            */
 
             Logger.LogInfo("Found body " + randomMonster.name + ".");
 
@@ -509,7 +499,7 @@ namespace Wonda
             newPos = (TeleportHelper.FindSafeTeleportDestination(newPos, player.bodyPrefab.GetComponent<CharacterBody>(), RoR2Application.rng) ?? newPos);
 
             // Respawning that player!
-            player.Respawn(newPos, Quaternion.identity);
+            player.Respawn(GrabNearestNodePosition(newPos), Quaternion.identity);
             Logger.LogInfo("Respawned " + player.playerCharacterMasterController.networkUser.userName + "!");
 
             // Catching Monster Variants if the host has it disabled.
@@ -634,42 +624,64 @@ namespace Wonda
             currEnemyWhitelist.Clear();
             Logger.LogInfo("Whitelist cleared.");
 
-            if(ClassicStageInfo.instance == null) return;
-            Logger.LogInfo("Selection isn't null.");
-
-            // Grabbing a reference liiist.
-            var list = ClassicStageInfo.instance.monsterSelection.choices.ToList();
-
-            // Beginning a nice lil' for loop.
-            foreach (var choice in list)
+            if(ClassicStageInfo.instance == null || ClassicStageInfo.instance.monsterSelection == null || ClassicStageInfo.instance.monsterSelection.choices == null)
             {
-                Logger.LogInfo("Testing choice.");
+                Logger.LogInfo("There is no available monster selection!");
+                if(VoidRaidGauntletController.instance)
+                {
+                    Logger.LogInfo("Void raid detected! Forcing monster selection...");
 
-                // First First, we check to see if choice and value are null. Never leave an NRE unturned.
-                if (choice.value == null) continue;
-
-                // First, we grab the SpawnCard of our monster.
-                SpawnCard currMonster = choice.value.spawnCard;
-                if (currMonster == null) continue;
-
-                // Then, we check to see if the monster has a body.
-                GameObject currMonsterBody = BodyCatalog.FindBodyPrefab(currMonster.prefab.name.Replace("Master", "Body"));
-                if (currMonsterBody == null) continue;
-                Logger.LogInfo("We have found " + currMonsterBody.name + ".");
-
-                // Nuking any unwanted Champions.
-                if (!(_config.AllowBosses && Run.instance.loopClearCount >= _config.BossRequiredLoopCount) && currMonsterBody.GetComponent<CharacterBody>().isChampion) continue;
-
-                // Nuking any unwanted Scavangers.
-                if (!(_config.AllowScavengers && Run.instance.loopClearCount >= _config.ScavangerRequiredLoopCount) && currMonsterBody.name == "ScavengerBody") continue;
-
-                // Is it in our Blacklist?
-                if (CheckBlacklist(currMonsterBody.name)) continue;
-
-                // Add that rad dude!
-                currEnemyWhitelist.Add(currMonsterBody);
-                Logger.LogInfo("Adding " + currMonsterBody.name + " to the currWhitelist.");
+                    currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("NullifierBody"));
+                    currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("VoidJailerBody"));
+                    currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("VoidMegaCrabBody"));
+                }
             }
+            else
+            {
+                Logger.LogInfo("Selection isn't null.");
+
+                // Grabbing a reference liiist.
+                List<WeightedSelection<DirectorCard>.ChoiceInfo> list = ClassicStageInfo.instance.monsterSelection.choices.ToList();
+
+                // Beginning a nice lil' for loop.
+                foreach (var choice in list)
+                {
+                    Logger.LogInfo("Testing choice.");
+
+                    // First First, we check to see if choice and value are null. Never leave an NRE unturned.
+                    if (choice.value == null) continue;
+
+                    // First, we grab the SpawnCard of our monster.
+                    SpawnCard currMonster = choice.value.spawnCard;
+                    if (currMonster == null) continue;
+
+                    // Then, we check to see if the monster has a body.
+                    GameObject currMonsterBody = BodyCatalog.FindBodyPrefab(currMonster.prefab.name.Replace("Master", "Body"));
+                    if (currMonsterBody == null) continue;
+                    Logger.LogInfo("We have found " + currMonsterBody.name + ".");
+
+                    // Nuking any unwanted Champions.
+                    if (!(_config.AllowBosses && Run.instance.loopClearCount >= _config.BossRequiredLoopCount) && currMonsterBody.GetComponent<CharacterBody>().isChampion) 
+                    {
+                        if(_config.AllowBosses) currSpecialEnemyWhitelist.Add(currMonsterBody); // We have to let a player have fun every *once* in a while.
+                        continue;
+                    }
+
+                    // Nuking any unwanted Scavangers.
+                    if (!(_config.AllowScavengers && Run.instance.loopClearCount >= _config.ScavangerRequiredLoopCount) && currMonsterBody.name == "ScavengerBody") continue;
+
+                    // Is it in our Blacklist?
+                    if (CheckBlacklist(currMonsterBody.name)) continue;
+
+                    // Add that rad dude!
+                    currEnemyWhitelist.Add(currMonsterBody);
+                    Logger.LogInfo("Adding " + currMonsterBody.name + " to the currWhitelist.");
+                }
+            }
+
+            // Populating the Final Bosses list.
+            finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("BrotherBody"));
+            finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("MiniVoidRaidCrabBodyBase"));
 
             // Bring out the backup dude if nothing works.
             if (currEnemyWhitelist.Count <= 0) currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("LemurianBody"));
@@ -723,6 +735,30 @@ namespace Wonda
 
         // Utility Methods
         //
+
+        // Mooooore stolen coooode. Using RoR's ambush generation code to grab the spawn position for players.
+        private Vector3 GrabNearestNodePosition(Vector3 startPos)
+        {
+            NodeGraph groundNodes = SceneInfo.instance.groundNodes;
+            NodeGraph.NodeIndex nodeIndex = groundNodes.FindClosestNode(startPos, HullClassification.BeetleQueen);
+            NodeGraphSpider nodeGraphSpider = new NodeGraphSpider(groundNodes, HullMask.BeetleQueen);
+            nodeGraphSpider.AddNodeForNextStep(nodeIndex);
+
+            List<NodeGraphSpider.StepInfo> list = new List<NodeGraphSpider.StepInfo>();
+            int num = 0;
+            List<NodeGraphSpider.StepInfo> collectedSteps = nodeGraphSpider.collectedSteps;
+            while (nodeGraphSpider.PerformStep() && num < 8)
+            {
+                num++;
+                for (int i = 0; i < collectedSteps.Count; i++)
+                {
+                    list.Add(collectedSteps[i]);
+                }
+                collectedSteps.Clear();
+            }
+            groundNodes.GetNodePosition(list[Random.Range(0, list.Count - 1)].node, out Vector3 outPos);
+            return outPos;
+        }
 
         // A cheap and dirty way of checking to see if a string is in the blacklist.
         private bool CheckBlacklist(string name)
