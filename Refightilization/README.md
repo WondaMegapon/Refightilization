@@ -45,7 +45,7 @@ Thanks to Cleveryt for the French localization. Thanks to Goleden for the Chines
 
 # Changelog
 
-1.1.2 - Added Chinese translation.
+1.1.2 - Added Chinese translation. Disabled respawning for Commencement, option can be toggled in config.
 
 1.1.1 - Added French translation.
 

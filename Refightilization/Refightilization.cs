@@ -65,6 +65,7 @@ namespace Wonda
         private int respawnLoops; // Will break out of the function if it runs into too many of these.
         public List<GameObject> currEnemyWhitelist = new List<GameObject>(); // For optimization, keeping track of the current stage's whitelist.
         public List<EquipmentIndex> currEliteWhitelist = new List<EquipmentIndex>(); // Another optimization, keeping track of the current stage's elites.
+        public bool moonDisabled; // For disabling spawning on the moon due to softlocks.
 
         public void Awake()
         {
@@ -108,6 +109,7 @@ namespace Wonda
             respawnTime = _config.RespawnDelay; // Making sure that this function exists on a per run basis.
             SetupPlayers(); // Gotta make sure players are properly stored once the run begins.
             SetupLang(); // For all of our wacky lines we need said.
+            moonDisabled = false; // Moonless
         }
 
         private void GlobalEventManager_OnPlayerCharacterDeath(On.RoR2.GlobalEventManager.orig_OnPlayerCharacterDeath orig, GlobalEventManager self, DamageReport damageReport, NetworkUser victimNetworkUser)
@@ -138,6 +140,7 @@ namespace Wonda
             if (_config.EnableRefightilization) StopCoroutine(RespawnCheck());
             orig(self, sceneName);
             if (!_config.EnableRefightilization) return; // Kinda pointless to do anything if the mod is disabled.
+            if (sceneName.Equals("moon") || sceneName.Equals("moon2")) moonDisabled = true;
             if (self.stageClearCount > 0) ResetPrefabs(); // Gotta make sure players respawn as their desired class.
             Invoke("UpdateStageWhitelist", 1f); // Gotta make sure we have an accurate monster selection.
             Invoke("UpdateEliteWhitelist", 1f); // Gotta make sure we have an accurate elite selection.
@@ -327,6 +330,13 @@ namespace Wonda
             if (_config.NoRespawnsAfterTeleporter && TeleporterInteraction.instance && TeleporterInteraction.instance.isCharged)
             {
                 Logger.LogInfo("Respawning after teleporter is disabled!");
+                yield break;
+            }
+
+            // Aaand moon prevention.
+            if (moonDisabled)
+            {
+                Logger.LogInfo("Respawn prevented due to current stage.");
                 yield break;
             }
 

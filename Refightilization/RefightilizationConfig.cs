@@ -35,6 +35,7 @@ namespace Wonda
 
         private readonly ConfigEntry<bool> _murderRevive;
         private readonly ConfigEntry<bool> _announceRespawns;
+        private readonly ConfigEntry<bool> _disableMoon;
 
         private readonly ConfigEntry<bool> _endGameWhenEverybodyDead;
         private readonly ConfigEntry<int> _maxRespawnTries;
@@ -69,6 +70,7 @@ namespace Wonda
 
         public bool MurderRevive { get => _murderRevive.Value; }
         public bool AnnounceRespawns { get => _announceRespawns.Value; }
+        public bool DisableMoon { get => _disableMoon.Value; }
 
         public bool EndGameWhenEverybodyDead { get => _endGameWhenEverybodyDead.Value; }
         public int MaxRespawnTries { get => _maxRespawnTries.Value; }
@@ -105,6 +107,7 @@ namespace Wonda
 
             _murderRevive = config.Bind("Behavior", "MurderRevive", true, "Will respawn a dead player as a survivor if they kill another player.");
             _announceRespawns = config.Bind("Behavior", "AnnounceRespawns", true, "Will announce a player respawning in the chat.");
+            _disableMoon = config.Bind("Behavior", "DisableMoon", true, "Prevents players from respawning in Commencement.");
 
             _forceItemRestoration = config.Bind("Item Settings", "ForceItemRestoration", false, "Will reset a player's inventory to the state it was before they died. (Overrides ReturnItemsOnStageChange.)");
 
