@@ -45,6 +45,8 @@ Thanks to Cleveryt for the French localization. Thanks to Goleden for the Chines
 
 # Changelog
 
+1.1.4 - Removed ForceItemRestoration, ReturnItemsOnStageChange, and RemoveAllItems due to instability. Minor adjustments to drone and spawning behavior. (Please send an issue report regarding any lost items.)
+
 1.1.3 - Fixed respawning in Planetarium. Adjusted spawning. Added a few secrets.
 
 1.1.2 - Added Chinese translation. Disabled respawning for Commencement, option can be toggled in config.

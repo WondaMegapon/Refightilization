@@ -28,8 +28,6 @@ namespace Wonda
 
         private readonly ConfigEntry<bool> _itemPickupToggle;
         private readonly ConfigEntry<bool> _removeMonsterVariantItems;
-        private readonly ConfigEntry<bool> _removeAllItems;
-        private readonly ConfigEntry<bool> _returnItemsOnStageChange;
         private readonly ConfigEntry<bool> _takeAffix;
         private readonly ConfigEntry<bool> _forceGrantAffix;
 
@@ -39,7 +37,6 @@ namespace Wonda
 
         private readonly ConfigEntry<bool> _endGameWhenEverybodyDead;
         private readonly ConfigEntry<int> _maxRespawnTries;
-        private readonly ConfigEntry<bool> _forceItemRestoration;
 
         // Making the public variables
         public bool EnableRefightilization { get => _enableRefightilization.Value; }
@@ -63,8 +60,6 @@ namespace Wonda
 
         public bool ItemPickupToggle { get => _itemPickupToggle.Value; }
         public bool RemoveMonsterVariantItems { get => _removeMonsterVariantItems.Value; }
-        public bool RemoveAllItems { get => _removeAllItems.Value; }
-        public bool ReturnItemsOnStageChange { get => _returnItemsOnStageChange.Value; }
         public bool TakeAffix { get => _takeAffix.Value; }
         public bool ForceGrantAffix { get => _forceGrantAffix.Value; }
 
@@ -74,7 +69,6 @@ namespace Wonda
 
         public bool EndGameWhenEverybodyDead { get => _endGameWhenEverybodyDead.Value; }
         public int MaxRespawnTries { get => _maxRespawnTries.Value; }
-        public bool ForceItemRestoration { get => _forceItemRestoration.Value; }
 
         // Here's the fancy ol' initialization function.
         public RefightilizationConfig(ConfigFile config)
@@ -98,18 +92,14 @@ namespace Wonda
             _noRespawnsAfterTeleporter = config.Bind("Respawn Settings", "NoRespawnsAfterTeleporter", true, "Disables respawning after the Teleporter event concludes.");
             _noRepeatRespawns = config.Bind("Respawn Settings", "NoRepeatRespawns", true, "Will attempt to prevent the player from respawning as the same monster twice in a row.");
 
-            _itemPickupToggle = config.Bind("Item Settings", "ItemPickupToggle", true, "Allows monster players to pick up items off the ground. (Disabling won't work if RespawnTeam is set to 1.)");
+            _itemPickupToggle = config.Bind("Item Settings", "ItemPickupToggle", true, "Allows monster players to pick up items off the ground. (Disabling won't work if RespawnTeam is set to Player.)");
             _removeMonsterVariantItems = config.Bind("Item Settings", "RemoveMonsterVariantItems", true, "Will remove items given to players by Monster Variants on respawn.");
-            _removeAllItems = config.Bind("Item Settings", "RemoveAllItems", false, "Will remove all items in a player's inventory when they respawn.");
-            _returnItemsOnStageChange = config.Bind("Item Settings", "ReturnItemsOnStageChange", true, "If RemoveAllItems is enabled, will allow removed items to be returned when the stage changes.");
             _takeAffix = config.Bind("Item Settings", "TakeAffix", true, "Will take away granted affixes upon respawning.");
             _forceGrantAffix = config.Bind("Item Settings", "ForceGrantAffix", false, "Will forcibly give the player an aspect, even if they have an equipment item.");
 
             _murderRevive = config.Bind("Behavior", "MurderRevive", true, "Will respawn a dead player as a survivor if they kill another player.");
             _announceRespawns = config.Bind("Behavior", "AnnounceRespawns", true, "Will announce a player respawning in the chat.");
             _disableMoon = config.Bind("Behavior", "DisableMoon", true, "Prevents players from respawning in Commencement.");
-
-            _forceItemRestoration = config.Bind("Item Settings", "ForceItemRestoration", false, "Will reset a player's inventory to the state it was before they died. (Overrides ReturnItemsOnStageChange.)");
 
             _endGameWhenEverybodyDead = config.Bind("Debug", "EndGameWhenEverybodyDead", true, "Ends the round when everybody is dead. (Keep this on.)");
             _maxRespawnTries = config.Bind("Debug", "MaxRespawnTries", 5, "The maximum attempts the game will make to retry spawning a player.");

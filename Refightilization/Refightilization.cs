@@ -385,10 +385,10 @@ namespace Wonda
                     {
                         player.isDead = true; // They died!
                         player.inventory.CopyItemsFrom(player.master.inventory); // Copy all their items.
-                        if (_config.RemoveAllItems) player.master.inventory.CopyItemsFrom(new Inventory()); // Nuke them if that's what the player wants.
                     }
 
                     player.master.teamIndex = (TeamIndex)_config.RespawnTeam; // Moved out here in-case config is changed mid-game.
+                    ResetMinionTeam(player.master);
                     respawnLoops = 0; // Setting our loops in-case something breaks in RefightRespawn.
                     RefightRespawn(player.master, deathPos); // Begin respawning the player.
                 }
@@ -449,8 +449,8 @@ namespace Wonda
 
             // Another optimization, to prevent the game from looping over several repeated monsters.
             List<GameObject> tempEnemyWhitelist = currEnemyWhitelist;
-            if (Util.CheckRoll(1, player.playerCharacterMasterController.master) && currSpecialEnemyWhitelist.Count >= 1) tempEnemyWhitelist = new List<GameObject>(currSpecialEnemyWhitelist);
-            if (Util.CheckRoll(0.001f, player.playerCharacterMasterController.master) && finalBossWhitelist.Count >= 1) tempEnemyWhitelist = new List<GameObject>(finalBossWhitelist);
+            if (Util.CheckRoll(5f, player.playerCharacterMasterController.master) && currSpecialEnemyWhitelist.Count >= 1) tempEnemyWhitelist = new List<GameObject>(currSpecialEnemyWhitelist);
+            if (Util.CheckRoll(0.1f, player.playerCharacterMasterController.master) && finalBossWhitelist.Count >= 1) tempEnemyWhitelist = new List<GameObject>(finalBossWhitelist);
 
             if (_config.NoRepeatRespawns && tempEnemyWhitelist.Count > 1) tempEnemyWhitelist.Remove(tempEnemyWhitelist.Where(entity => entity.name == player.bodyPrefab.name).FirstOrDefault());
 
@@ -496,7 +496,7 @@ namespace Wonda
             if (newPos == deathPos && TeleporterInteraction.instance) newPos = TeleporterInteraction.instance.transform.position + spawnRadius;
 
             // Grabbing a safe location nearby that location.
-            newPos = (TeleportHelper.FindSafeTeleportDestination(newPos, player.bodyPrefab.GetComponent<CharacterBody>(), RoR2Application.rng) ?? newPos);
+            //newPos = TeleportHelper.FindSafeTeleportDestination(newPos, player.bodyPrefab.GetComponent<CharacterBody>(), RoR2Application.rng) ?? newPos;
 
             // Respawning that player!
             player.Respawn(GrabNearestNodePosition(newPos), Quaternion.identity);
@@ -596,6 +596,7 @@ namespace Wonda
         {
             player.master.bodyPrefab = player.origPrefab; // Resetting their prefab.
             player.master.teamIndex = TeamIndex.Player; // Putting them back on the player team.
+            ResetMinionTeam(player.master);
 
             // Taking back that affix.
             if (player.giftedAffix)
@@ -607,9 +608,6 @@ namespace Wonda
             // Refer to the function names.
             RemoveMonsterVariantItems(player.master);
             StartCoroutine(GiveScepterWait(player.master, 1f));
-
-            if (_config.RemoveAllItems && _config.ReturnItemsOnStageChange) player.master.inventory.AddItemsFrom(player.inventory); // Add the player's items back to their inventory, incase they find new items as a monster.
-            if (_config.ForceItemRestoration) player.master.inventory.CopyItemsFrom(player.inventory); // Replace the player's items with their old equipment, nuking any existing inventory.
 
             // Yay! They're no longer dead!
             player.isDead = false;
@@ -787,6 +785,22 @@ namespace Wonda
             }
 
             return null;
+        }
+
+        // For resetting the minions a character owns.
+        private void ResetMinionTeam(CharacterMaster player)
+        {
+            if (player == null || player.minionOwnership == null || player.minionOwnership.group == null || player.minionOwnership.group.members.Length <= 0) return;
+
+            MinionOwnership[] minionOwnership = FindObjectsOfType<MinionOwnership>();
+
+            foreach (MinionOwnership minion in minionOwnership)
+            {
+                if (minion.ownerMaster == player) {
+                    minion.GetComponent<CharacterMaster>().teamIndex = player.teamIndex;
+                    minion.GetComponent<CharacterMaster>().Respawn(minion.transform.position, minion.transform.rotation);
+                }
+            }
         }
 
         // Code for handling other mods.
