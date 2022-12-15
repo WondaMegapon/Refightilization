@@ -23,6 +23,12 @@ If you ever want to mess with this mod while in single player, there are some co
 
 Issues are tracked on the [Github](https://github.com/WondaMegapon/Refightilization/issues). Feel free to leave any suggestions there as well.
 
+# Translation
+
+Come help get Refight translated to other languages! The more, the merrier.
+
+[![Crowdin](https://badges.crowdin.net/refightilization-risk-of-rain/localized.svg)](https://crowdin.com/project/refightilization-risk-of-rain)
+
 # Contact
 
 The [Github](https://github.com/WondaMegapon/Refightilization/issues) is the best place to leave any issues or suggestions. However, if you have any general feedback, feel free to message me on Discord. You can find me at `Wonda#2183` in the modding server.
@@ -43,7 +49,29 @@ Thanks to Shower and Infinityhero for coming up with amazing revive messages.
 
 Thanks to Cleveryt for the French localization. Thanks to Goleden for the Chinese localization.
 
+Regarding the 1.1.7 Update, thanks to:
+
+- Alphaca, DVRP for Korean Translations
+
+- Dusart Bapiste for French Translations
+
+- Dusty, Kirill Grinchanyuk for Russian Translations
+
+- MareNelCeno for Italian Translations
+
+- NoNamedTerror for Turkish Translations
+
+- 咸鱼王 for Chineese Translations
+
+- Juhnter for Spanish Translations
+
 # Changelog
+
+1.1.7 - Updated Localization
+
+1.1.6 - Added fix for [PluginChipsMod](https://thunderstore.io/package/RumblingJOSEPH/PlugInChipsMod/1.0.11/); alongside a config option to test other mod respawn methods with and without Refight interfering with them, added Russian translation (thanks Regoioz).
+
+1.1.5 - Updated Readme.
 
 1.1.4 - Removed ForceItemRestoration, ReturnItemsOnStageChange, and RemoveAllItems due to instability. Minor adjustments to drone and spawning behavior. (Please send an issue report regarding any lost items.)
 

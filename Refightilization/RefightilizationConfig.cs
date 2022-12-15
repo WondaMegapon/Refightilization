@@ -37,6 +37,7 @@ namespace Wonda
 
         private readonly ConfigEntry<bool> _endGameWhenEverybodyDead;
         private readonly ConfigEntry<int> _maxRespawnTries;
+        private readonly ConfigEntry<string> _preventPrefabResetMethods;
 
         // Making the public variables
         public bool EnableRefightilization { get => _enableRefightilization.Value; }
@@ -69,6 +70,7 @@ namespace Wonda
 
         public bool EndGameWhenEverybodyDead { get => _endGameWhenEverybodyDead.Value; }
         public int MaxRespawnTries { get => _maxRespawnTries.Value; }
+        public string[] PreventPrefabResetMethods { get => _preventPrefabResetMethods.Value.Replace(" ", "").Split(','); }
 
         // Here's the fancy ol' initialization function.
         public RefightilizationConfig(ConfigFile config)
@@ -103,6 +105,7 @@ namespace Wonda
 
             _endGameWhenEverybodyDead = config.Bind("Debug", "EndGameWhenEverybodyDead", true, "Ends the round when everybody is dead. (Keep this on.)");
             _maxRespawnTries = config.Bind("Debug", "MaxRespawnTries", 5, "The maximum attempts the game will make to retry spawning a player.");
+            _preventPrefabResetMethods = config.Bind("Debug", "PreventPrefabResetMethods", "SwapCharacters, RevertCharacter", "Manually set methods to not be affected by Refight's BodyPrefab-Resetting behavior. (Don't touch this unless you know what you're doing.)");
         }
     }
 }

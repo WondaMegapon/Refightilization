@@ -30,7 +30,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.1.0";
+        const string version = "1.1.6";
 
         // Config
         private RefightilizationConfig _config;
@@ -64,6 +64,9 @@ namespace Wonda
         private List<GameObject> voidWhitelist = new List<GameObject>();
         private List<GameObject> finalBossWhitelist = new List<GameObject>();
 
+        // Hard-coded Functions for Respawn to not clear the player prefab.
+        private List<string> respawnMethodCheck = new List<string>() { "RefightRespawn" };
+
         // Misc variables
         public float respawnTime; // For an added penalty per death.
         private int respawnLoops; // Will break out of the function if it runs into too many of these.
@@ -76,6 +79,7 @@ namespace Wonda
         {
             _config = new RefightilizationConfig(Config);
             SetupHooks();
+            respawnMethodCheck.AddRange(_config.PreventPrefabResetMethods);
             Logger.LogInfo("Loaded Refightilization!");
         }
 
@@ -217,7 +221,7 @@ namespace Wonda
             if (_config.EnableRefightilization)
             {
                 string currMethod = new StackFrame(2).GetMethod().Name;
-                if (currMethod != "RefightRespawn" && (FindPlayerStorage(self) != null))
+                if (!respawnMethodCheck.Exists(x => x.Equals(currMethod)) && (FindPlayerStorage(self) != null))
                 {
                     CleanPlayer(FindPlayerStorage(self));
                 }
