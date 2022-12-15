@@ -30,7 +30,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.1.6";
+        const string version = "1.1.7";
 
         // Config
         private RefightilizationConfig _config;
