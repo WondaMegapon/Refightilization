@@ -9,8 +9,8 @@
   "Description": "Allows players to respawn as a monster when they die.",
   "GameVersion": "N/A",
   "Dependencies": [
-    "bbepis-BepInExPack-5.4.1900",
-    "tristanmcpherson-R2API-4.0.11"
+    "bbepis-BepInExPack-5.4.2103",
+    "tristanmcpherson-R2API-4.4.1"
   ],
   "OptionalDependencies": [],
   "Incompatibilities": [],
