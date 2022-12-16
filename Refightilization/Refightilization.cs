@@ -47,14 +47,16 @@ namespace Wonda
         // Class to make players easier to manage
         public class PlayerStorage
         {
-            public NetworkUser user;
-            public CharacterMaster master;
-            public GameObject origPrefab;
-            public bool isDead;
-            public Inventory inventory;
-            public bool giftedAffix;
-            public bool hadAncientScepter;
+            public NetworkUser user = null;
+            public CharacterMaster master = null;
+            public GameObject origPrefab = null;
+            public bool isDead = false;
+            public Inventory inventory = null;
+            public bool giftedAffix = false;
+            public bool hadAncientScepter = false;
             public EquipmentIndex previousEquipment = EquipmentIndex.None;
+            public NetworkUser lastDamagedBy = null;
+            public float lastDamagedTime = 0;
         }
 
         // The actual class to use.
@@ -100,6 +102,7 @@ namespace Wonda
         {
             On.RoR2.Run.Start += Run_Start;
             On.RoR2.GlobalEventManager.OnPlayerCharacterDeath += GlobalEventManager_OnPlayerCharacterDeath;
+            RoR2.GlobalEventManager.onServerDamageDealt += GlobalEventManager_onServerDamageDealt;
             On.RoR2.Run.OnServerSceneChanged += Run_OnServerSceneChanged;
             On.RoR2.Run.OnUserAdded += Run_OnUserAdded;
             On.RoR2.Run.OnUserRemoved += Run_OnUserRemoved;
@@ -128,20 +131,45 @@ namespace Wonda
             if (!_config.EnableRefightilization) return;
 
             // Handling PvP and if a monster successfully kills a player.
-            if (_config.MurderRevive && FindPlayerStorage(damageReport.attackerMaster) != null && FindPlayerStorage(damageReport.attackerMaster).isDead && FindPlayerStorage(damageReport.victimMaster) != null && !FindPlayerStorage(damageReport.victimMaster).isDead)
+            if (_config.MurderRevive)
             {
-                CleanPlayer(FindPlayerStorage(damageReport.attackerMaster));
-                damageReport.attackerMaster.RespawnExtraLife();
-                damageReport.attackerMaster.inventory.RemoveItem(RoR2Content.Items.ExtraLifeConsumed);
+                PlayerStorage victimStorage = FindPlayerStorage(victimNetworkUser.master);
+                PlayerStorage attackerStorage = null;
+                if (victimStorage != null && victimStorage.lastDamagedBy != null && FindPlayerStorage(victimStorage.lastDamagedBy.master) != null) attackerStorage = FindPlayerStorage(victimStorage.lastDamagedBy.master);
 
-                string messageText = _language.RevengeMessages[Random.Range(0, _language.RevengeMessages.Count - 1)];
-                messageText = messageText.Replace("{0}", damageReport.attackerMaster.playerCharacterMasterController.networkUser.userName);
-                messageText = messageText.Replace("{1}", damageReport.victimMaster.playerCharacterMasterController.networkUser.userName);
+                // It feels *awful* nesting if statements, but this is the best I can do.
+                if (victimStorage != null && !victimStorage.isDead && // Handling the Victim
+                attackerStorage != null && attackerStorage.isDead && // Handling the Attacker
+                Time.time <= victimStorage.lastDamagedTime + _config.MurderWindow) // Handling the time window
+                {
+                    CleanPlayer(attackerStorage);
+                    attackerStorage.master.RespawnExtraLife(); // Respawning the attacker with the extra life effect.
+                    attackerStorage.master.inventory.RemoveItem(RoR2Content.Items.ExtraLifeConsumed); // Immediately removing the item that the extra life effect spawns.
 
-                Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cWorldEvent><sprite name=\"Skull\" tint=1> " + messageText + " <sprite name=\"Skull\" tint=1></style>" });
+                    string messageText = _language.RevengeMessages[Random.Range(0, _language.RevengeMessages.Count - 1)]; // Grabbing a random revenge message.
+                    messageText = messageText.Replace("{0}", attackerStorage.master.playerCharacterMasterController.networkUser.userName); // Setting 0 to be the attacker.
+                    messageText = messageText.Replace("{1}", victimStorage.master.playerCharacterMasterController.networkUser.userName); // Setting 1 to be the victim.
+
+                    Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cWorldEvent><sprite name=\"Skull\" tint=1> " + messageText + " <sprite name=\"Skull\" tint=1></style>" });
+                }
             }
+
             StartCoroutine(RespawnCheck(victimNetworkUser.master.transform.position, respawnTime)); // Spawning in players shortly after a delay.
             respawnTime += _config.AdditionalRespawnTime;
+        }
+
+        private void GlobalEventManager_onServerDamageDealt(DamageReport report)
+        {
+            // The usual "if enabled" check.
+            if (!_config.EnableRefightilization && !_config.MurderRevive) return;
+
+            // Confirming that the damage report contains network users.
+            if (FindPlayerStorage(report.attackerMaster) != null && FindPlayerStorage(report.victimMaster) != null)
+            {
+                PlayerStorage victim = FindPlayerStorage(report.victimMaster); // Grabbing the victim.
+                victim.lastDamagedBy = FindPlayerStorage(report.attackerMaster).user; // Overriding the victim's lastDamagedBy to be the attacker.
+                victim.lastDamagedTime = Time.time; // Setting the time they were last damaged to now.
+            }
         }
 
         private void Run_OnServerSceneChanged(On.RoR2.Run.orig_OnServerSceneChanged orig, Run self, string sceneName)
@@ -229,7 +257,7 @@ namespace Wonda
             return orig(self, footPosition, rotation);
         }
 
-        private GameObject CharacterMaster_PickRandomSurvivorBodyPrefab(On.RoR2.CharacterMaster.orig_PickRandomSurvivorBodyPrefab orig, Xoroshiro128Plus rng, List<UnlockableDef> availableUnlockableDefs, bool allowHidden)
+        private GameObject CharacterMaster_PickRandomSurvivorBodyPrefab(On.RoR2.CharacterMaster.orig_PickRandomSurvivorBodyPrefab orig, Xoroshiro128Plus rng, NetworkUser networkUser, bool allowHidden)
         {
             // In-case Metamorphosis is enabled, we have to make sure that the monster is the one that respawns and not the survivor.
             if (_config.EnableRefightilization) {
@@ -239,7 +267,7 @@ namespace Wonda
                     return currEnemyWhitelist[Random.Range(0, currEnemyWhitelist.Count - 1)];
                 }
             }
-            return orig(rng, availableUnlockableDefs, allowHidden);
+            return orig(rng, networkUser, allowHidden);
         }
 
         private void Run_BeginGameOver(On.RoR2.Run.orig_BeginGameOver orig, Run self, GameEndingDef gameEndingDef)

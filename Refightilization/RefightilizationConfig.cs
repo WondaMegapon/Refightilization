@@ -32,6 +32,7 @@ namespace Wonda
         private readonly ConfigEntry<bool> _forceGrantAffix;
 
         private readonly ConfigEntry<bool> _murderRevive;
+        private readonly ConfigEntry<float> _murderWindow;
         private readonly ConfigEntry<bool> _announceRespawns;
         private readonly ConfigEntry<bool> _disableMoon;
 
@@ -65,6 +66,7 @@ namespace Wonda
         public bool ForceGrantAffix { get => _forceGrantAffix.Value; }
 
         public bool MurderRevive { get => _murderRevive.Value; }
+        public float MurderWindow { get => _murderWindow.Value; }
         public bool AnnounceRespawns { get => _announceRespawns.Value; }
         public bool DisableMoon { get => _disableMoon.Value; }
 
@@ -100,6 +102,7 @@ namespace Wonda
             _forceGrantAffix = config.Bind("Item Settings", "ForceGrantAffix", false, "Will forcibly give the player an aspect, even if they have an equipment item.");
 
             _murderRevive = config.Bind("Behavior", "MurderRevive", true, "Will respawn a dead player as a survivor if they kill another player.");
+            _murderWindow = config.Bind("Behavior", "MurderWindow", 15f, "The amount of time that a player has after damaging a player to respawn as them.");
             _announceRespawns = config.Bind("Behavior", "AnnounceRespawns", true, "Will announce a player respawning in the chat.");
             _disableMoon = config.Bind("Behavior", "DisableMoon", true, "Prevents players from respawning in Commencement.");
 
