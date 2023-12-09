@@ -16,7 +16,6 @@ namespace Wonda
 {
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync)]
     [BepInDependency("com.bepis.r2api", BepInDependency.DependencyFlags.HardDependency)]
-    [BepInDependency("com.rob.MonsterVariants", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.Nebby.VarianceAPI", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.ThinkInvisible.TILER2", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.ThinkInvisible.ClassicItems", BepInDependency.DependencyFlags.SoftDependency)]
@@ -40,7 +39,6 @@ namespace Wonda
         private RefightilizationLanguage _language;
 
         // Additional mods to hook into for balance reasons.
-        private PluginInfo _monsterVariants;
         private PluginInfo _varianceAPI;
         private PluginInfo _classicItems;
         private PluginInfo _standaloneAncientScepter;
@@ -89,7 +87,6 @@ namespace Wonda
         public void Start()
         {
             // Setting up all the mod compatibility.
-            if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.rob.MonsterVariants", out var monsterVariantsPlugin)) _monsterVariants = monsterVariantsPlugin;
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.Nebby.VarianceAPI", out var varianceAPI)) _varianceAPI = varianceAPI;
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.ThinkInvisible.ClassicItems", out var classicItemsPlugin)) _classicItems = classicItemsPlugin;
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.DestroyedClone.AncientScepter", out var standaloneAncientScepterPlugin)) _standaloneAncientScepter = standaloneAncientScepterPlugin;
@@ -842,22 +839,7 @@ namespace Wonda
         // One-upping myself by having a master function that can call sub-functions.
         private void RemoveMonsterVariantItems(CharacterMaster player)
         {
-            if (_monsterVariants != null) { RemoveMonsterVariantItemsMV(player); }
             if (_varianceAPI != null) { RemoveMonsterVariantItemsAPI(player); }
-        }
-
-        // Stolen coooode. It takes the AddItems function from MonsterVariants and does everything in reverse... Except it no longer does thaaaat.
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        private void RemoveMonsterVariantItemsMV(CharacterMaster player)
-        {
-            if (player != null && player.GetBody() && player.GetBody().GetComponent<MonsterVariants.Components.VariantHandler>() && player.GetBody().GetComponent<MonsterVariants.Components.VariantHandler>().isVariant && _config.RemoveMonsterVariantItems)
-            {
-                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " is a Monster Variant. Attempting to remove their items.");
-                Logger.LogError("Oh no! MonsterVariants is depreciated!? You'd better switch to VarianceAPI if you want proper functionality. :)"); // It was my idea, not Nebby's. :P
-                Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cDeath> Oh no! The server owner forgot to uninstall MonsterVariants! </style>" });
-                Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cDeath> They'd better switch to VarianceAPI! </style>" });
-                player.inventory.GiveItem(RoR2Content.Items.HealthDecay, 15); // Ok this part was Nebby's idea.
-            }
         }
 
         // Amazing code provided by Nebby. Thank you so much.
