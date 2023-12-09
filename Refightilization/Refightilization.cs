@@ -259,7 +259,7 @@ namespace Wonda
         private GameObject CharacterMaster_PickRandomSurvivorBodyPrefab(On.RoR2.CharacterMaster.orig_PickRandomSurvivorBodyPrefab orig, Xoroshiro128Plus rng, NetworkUser networkUser, bool allowHidden)
         {
             // In-case Metamorphosis is enabled, we have to make sure that the monster is the one that respawns and not the survivor.
-            if (_config.EnableRefightilization) {
+            if (_config.EnableRefightilization && _config.OverrideMetamorphosis) {
                 string currMethod = new StackFrame(6).GetMethod().Name;
                 if (currMethod == "RefightRespawn")
                 {
@@ -419,7 +419,6 @@ namespace Wonda
                     }
 
                     player.master.teamIndex = (TeamIndex)_config.RespawnTeam; // Moved out here in-case config is changed mid-game.
-                    ResetMinionTeam(player.master);
                     respawnLoops = 0; // Setting our loops in-case something breaks in RefightRespawn.
                     RefightRespawn(player.master, deathPos); // Begin respawning the player.
                 }
@@ -548,6 +547,7 @@ namespace Wonda
             if (!player.GetBody().GetComponent<InteractionDriver>())
             {
                 player.GetBody().gameObject.AddComponent<InteractionDriver>();
+                Logger.LogInfo("Granting an interaction driver.");
             }
 
             // Oh! And fixing up their interactor so they can reach things that are just a *little* outta reach*.
@@ -563,7 +563,12 @@ namespace Wonda
                 // Next, we give flying enemies extra distance.
                 if (player.GetBody().isFlying)
                     interactor.maxInteractionDistance *= 1.5f;
+
+                Logger.LogInfo("Modifying interaction distance.");
             }
+
+            // Grabbing all of the minions of the player and changing their team.
+            ChangeMinionsTeam(player);
 
             // Some fun stuff to allow players to easily get back into combat.
             player.GetBody().AddTimedBuff(RoR2Content.Buffs.ArmorBoost, 15f);
@@ -627,7 +632,7 @@ namespace Wonda
         {
             player.master.bodyPrefab = player.origPrefab; // Resetting their prefab.
             player.master.teamIndex = TeamIndex.Player; // Putting them back on the player team.
-            ResetMinionTeam(player.master);
+            ChangeMinionsTeam(player.master);
 
             // Taking back that affix.
             if (player.giftedAffix)
@@ -642,6 +647,40 @@ namespace Wonda
 
             // Yay! They're no longer dead!
             player.isDead = false;
+        }
+
+        private void ChangeMinionsTeam(CharacterMaster player)
+        {
+            if (_config.ChangeMinionsTeam)
+            {
+                // Iterating over all of the minion groups.
+                MinionOwnership.MinionGroup minionGroup = null;
+                for (int i = 0; i < MinionOwnership.MinionGroup.instancesList.Count; i++)
+                {
+                    MinionOwnership.MinionGroup minionGroup2 = MinionOwnership.MinionGroup.instancesList[i];
+                    if (MinionOwnership.MinionGroup.instancesList[i].ownerId == player.netId)
+                    {
+                        minionGroup = minionGroup2;
+                        break;
+                    }
+                }
+
+                // If we found a minion group that belongs to the player.
+                if (minionGroup != null)
+                {
+                    // Iterating over each minion in the group.
+                    foreach (var minion in minionGroup.members)
+                    {
+                        // If the minion has a character master, then we change its index.
+                        if (minion && minion.GetComponent<CharacterMaster>())
+                        {
+                            minion.GetComponent<CharacterMaster>().teamIndex = player.teamIndex;
+                            if (minion.GetComponent<CharacterMaster>().GetBody()) minion.GetComponent<CharacterMaster>().GetBody().teamComponent.teamIndex = player.teamIndex;
+                            Logger.LogInfo("Changed " + minion.GetComponent<CharacterMaster>().name + "'s team.");
+                        }
+                    }
+                }
+            }
         }
 
         // Updating our Whitelist of monsters at stage generation.
@@ -849,22 +888,6 @@ namespace Wonda
             }
 
             return null;
-        }
-
-        // For resetting the minions a character owns.
-        private void ResetMinionTeam(CharacterMaster player)
-        {
-            if (player == null || player.minionOwnership == null || player.minionOwnership.group == null || player.minionOwnership.group.members.Length <= 0) return;
-
-            MinionOwnership[] minionOwnership = FindObjectsOfType<MinionOwnership>();
-
-            foreach (MinionOwnership minion in minionOwnership)
-            {
-                if (minion.ownerMaster == player) {
-                    minion.GetComponent<CharacterMaster>().teamIndex = player.teamIndex;
-                    minion.GetComponent<CharacterMaster>().Respawn(minion.transform.position, minion.transform.rotation);
-                }
-            }
         }
 
         // Code for handling other mods.

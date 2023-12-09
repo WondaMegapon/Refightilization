@@ -42,6 +42,8 @@ namespace Wonda
         private readonly ConfigEntry<float> _murderWindow;
         private readonly ConfigEntry<bool> _announceRespawns;
         private readonly ConfigEntry<bool> _disableMoon;
+        private readonly ConfigEntry<bool> _overrideMetamorphosis;
+        private readonly ConfigEntry<bool> _changeMinionsTeam;
 
         private readonly ConfigEntry<bool> _endGameWhenEverybodyDead;
         private readonly ConfigEntry<int> _maxRespawnTries;
@@ -79,6 +81,8 @@ namespace Wonda
         public float MurderWindow { get => _murderWindow.Value; }
         public bool AnnounceRespawns { get => _announceRespawns.Value; }
         public bool DisableMoon { get => _disableMoon.Value; }
+        public bool OverrideMetamorphosis { get => _overrideMetamorphosis.Value; }
+        public bool ChangeMinionsTeam { get => _changeMinionsTeam.Value; }
 
         public bool EndGameWhenEverybodyDead { get => _endGameWhenEverybodyDead.Value; }
         public int MaxRespawnTries { get => _maxRespawnTries.Value; }
@@ -116,6 +120,8 @@ namespace Wonda
             _murderWindow = config.Bind("Behavior Settings", "MurderWindow", 15f, "The amount of time that a player has after damaging a player to respawn as them.");
             _announceRespawns = config.Bind("Behavior Settings", "AnnounceRespawns", true, "Will announce a player respawning in the chat.");
             _disableMoon = config.Bind("Behavior Settings", "DisableMoon", true, "Prevents players from respawning in Commencement.");
+            _overrideMetamorphosis = config.Bind("Behavior Settings", "OverrideMetamorphosis", true, "Allows Refightilization to override Artifact of Metamorphosis's behavior.");
+            _changeMinionsTeam = config.Bind("Behavior Settings", "ChangeMinionsTeam", true, "Minions will have their team changed to match the player.");
 
             _respawnAsMonsterVariants = config.Bind("Compatibility Settings", "RespawnAsMonsterVariants", true, "Allows players to respawn as Monster Variants.");
             _removeMonsterVariantItems = config.Bind("Compatibility Settings", "RemoveMonsterVariantItems", true, "Will remove items given to players by Monster Variants on respawn.");
@@ -169,6 +175,8 @@ namespace Wonda
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_murderWindow, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 1, max = 60, increment = 1f }));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_announceRespawns));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_disableMoon));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_overrideMetamorphosis));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_changeMinionsTeam));
 
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_respawnAsMonsterVariants));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_removeMonsterVariantItems));
