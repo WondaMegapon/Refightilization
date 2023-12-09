@@ -571,7 +571,7 @@ namespace Wonda
             Logger.LogInfo("Applied buffs.");
 
             // And Affixes if the player is lucky.
-            if (Util.CheckRoll(_config.RespawnAffixChance, player.playerCharacterMasterController.master) || RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.eliteOnlyArtifactDef))
+            if (_config.RespawnAffixEnabled && (Util.CheckRoll(_config.RespawnAffixChance, player.playerCharacterMasterController.master) || RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.eliteOnlyArtifactDef)))
             {
                 if (player.inventory.GetEquipmentIndex() != EquipmentIndex.None && !_config.ForceGrantAffix) return; // If the player already has an equipment, just skip over 'em.
 
@@ -653,58 +653,78 @@ namespace Wonda
             currEnemyWhitelist.Clear();
             Logger.LogInfo("Whitelist cleared.");
 
-            if(ClassicStageInfo.instance == null || ClassicStageInfo.instance.monsterSelection == null || ClassicStageInfo.instance.monsterSelection.choices == null)
+            // If we have fixed pool enabled.
+            if(_config.EnableFixedPool)
             {
-                Logger.LogInfo("There is no available monster selection!");
-                if(VoidRaidGauntletController.instance)
-                {
-                    Logger.LogInfo("Void raid detected! Forcing monster selection...");
+                Logger.LogInfo("Fixed pool is enabled.");
 
-                    currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("NullifierBody"));
-                    currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("VoidJailerBody"));
-                    currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("VoidMegaCrabBody"));
+                // Iterating over each enemy body in our pool.
+                foreach (var enemyBody in _config.FixedPool)
+                {
+                    // Adding it to the whitelist.
+                    currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab(enemyBody));
+                    Logger.LogInfo("Adding " + enemyBody + " to the currWhitelist.");
                 }
-            }
-            else
-            {
-                Logger.LogInfo("Selection isn't null.");
 
-                // Grabbing a reference liiist.
-                List<WeightedSelection<DirectorCard>.ChoiceInfo> list = ClassicStageInfo.instance.monsterSelection.choices.ToList();
-
-                // Beginning a nice lil' for loop.
-                foreach (var choice in list)
+            // If fixed pool isn't enabled.
+            } else {
+                // If we have no monster choices available.
+                if (ClassicStageInfo.instance == null || ClassicStageInfo.instance.monsterSelection == null || ClassicStageInfo.instance.monsterSelection.choices == null)
                 {
-                    Logger.LogInfo("Testing choice.");
+                    Logger.LogInfo("There is no available monster selection!");
 
-                    // First First, we check to see if choice and value are null. Never leave an NRE unturned.
-                    if (choice.value == null) continue;
-
-                    // First, we grab the SpawnCard of our monster.
-                    SpawnCard currMonster = choice.value.spawnCard;
-                    if (currMonster == null) continue;
-
-                    // Then, we check to see if the monster has a body.
-                    GameObject currMonsterBody = BodyCatalog.FindBodyPrefab(currMonster.prefab.name.Replace("Master", "Body"));
-                    if (currMonsterBody == null) continue;
-                    Logger.LogInfo("We have found " + currMonsterBody.name + ".");
-
-                    // Nuking any unwanted Champions.
-                    if (!(_config.AllowBosses && Run.instance.loopClearCount >= _config.BossRequiredLoopCount) && currMonsterBody.GetComponent<CharacterBody>().isChampion) 
+                    // But we are in the Voidling encounter...
+                    if (VoidRaidGauntletController.instance)
                     {
-                        if(_config.AllowBosses) currSpecialEnemyWhitelist.Add(currMonsterBody); // We have to let a player have fun every *once* in a while.
-                        continue;
+                        Logger.LogInfo("Void raid detected! Forcing monster selection...");
+
+                        currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("NullifierBody"));
+                        currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("VoidJailerBody"));
+                        currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("VoidMegaCrabBody"));
                     }
+                }
+                // If we do have monster selections available.
+                else
+                {
+                    Logger.LogInfo("Selection isn't null.");
 
-                    // Nuking any unwanted Scavangers.
-                    if (!(_config.AllowScavengers && Run.instance.loopClearCount >= _config.ScavangerRequiredLoopCount) && currMonsterBody.name == "ScavengerBody") continue;
+                    // Grabbing a reference liiist.
+                    List<WeightedSelection<DirectorCard>.ChoiceInfo> list = ClassicStageInfo.instance.monsterSelection.choices.ToList();
 
-                    // Is it in our Blacklist?
-                    if (CheckBlacklist(currMonsterBody.name)) continue;
+                    // Beginning a nice lil' for loop.
+                    foreach (var choice in list)
+                    {
+                        Logger.LogInfo("Testing choice.");
 
-                    // Add that rad dude!
-                    currEnemyWhitelist.Add(currMonsterBody);
-                    Logger.LogInfo("Adding " + currMonsterBody.name + " to the currWhitelist.");
+                        // First First, we check to see if choice and value are null. Never leave an NRE unturned.
+                        if (choice.value == null) continue;
+
+                        // First, we grab the SpawnCard of our monster.
+                        SpawnCard currMonster = choice.value.spawnCard;
+                        if (currMonster == null) continue;
+
+                        // Then, we check to see if the monster has a body.
+                        GameObject currMonsterBody = BodyCatalog.FindBodyPrefab(currMonster.prefab.name.Replace("Master", "Body"));
+                        if (currMonsterBody == null) continue;
+                        Logger.LogInfo("We have found " + currMonsterBody.name + ".");
+
+                        // Nuking any unwanted Champions.
+                        if (!(_config.AllowBosses && Run.instance.loopClearCount >= _config.BossRequiredLoopCount) && currMonsterBody.GetComponent<CharacterBody>().isChampion)
+                        {
+                            if (_config.AllowBosses) currSpecialEnemyWhitelist.Add(currMonsterBody); // We have to let a player have fun every *once* in a while.
+                            continue;
+                        }
+
+                        // Nuking any unwanted Scavangers.
+                        if (!(_config.AllowScavengers && Run.instance.loopClearCount >= _config.ScavangerRequiredLoopCount) && currMonsterBody.name == "ScavengerBody") continue;
+
+                        // Is it in our Blacklist?
+                        if (CheckBlacklist(currMonsterBody.name)) continue;
+
+                        // Add that rad dude!
+                        currEnemyWhitelist.Add(currMonsterBody);
+                        Logger.LogInfo("Adding " + currMonsterBody.name + " to the currWhitelist.");
+                    }
                 }
             }
 
@@ -712,8 +732,21 @@ namespace Wonda
             finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("BrotherBody"));
             finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("MiniVoidRaidCrabBodyBase"));
 
-            // Bring out the backup dude if nothing works.
-            if (currEnemyWhitelist.Count <= 0) currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("LemurianBody"));
+            // Bring out the backup dudes if nothing works.
+            if (currEnemyWhitelist.Count <= 0)
+            {
+                Logger.LogInfo("No enemies were found, pulling out the backup enemies.");
+                // Yes I'm pulling out this again.
+                foreach (var enemyBody in _config.FixedPool)
+                {
+                    // Adding it to the whitelist.
+                    currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab(enemyBody));
+                    Logger.LogInfo("Adding " + enemyBody + " to the currWhitelist.");
+                }
+
+                // Okay, somebody didn't put in any backup enemies. **Now** we pull out the backup dude.
+                if (currEnemyWhitelist.Count <= 0) currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("LemurianBody"));
+            }
             Logger.LogInfo("Done updating Whitelist.");
         }
 

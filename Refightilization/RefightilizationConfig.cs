@@ -18,12 +18,15 @@ namespace Wonda
         private readonly ConfigEntry<string> _blacklistedEnemies;
         private readonly ConfigEntry<int> _bossRequiredLoopCount;
         private readonly ConfigEntry<int> _scavangerRequiredLoopCount;
+        private readonly ConfigEntry<bool> _enableFixedPool;
+        private readonly ConfigEntry<string> _fixedPool;
 
         private readonly ConfigEntry<float> _respawnDelay;
         private readonly ConfigEntry<RoR2.TeamIndex> _respawnTeam;
         private readonly ConfigEntry<float> _respawnHealthMultiplier;
         private readonly ConfigEntry<float> _respawnDamageMultiplier;
         private readonly ConfigEntry<float> _respawnMoneyMultiplier;
+        private readonly ConfigEntry<bool> _respawnAffixEnabled;
         private readonly ConfigEntry<float> _respawnAffixChance;
         private readonly ConfigEntry<float> _additionalRespawnTime;
         private readonly ConfigEntry<bool> _respawnAsMonsterVariants;
@@ -52,12 +55,15 @@ namespace Wonda
         public string[] BlacklistedEnemies { get => _blacklistedEnemies.Value.Replace(" ", "").Split(','); }
         public int BossRequiredLoopCount { get => _bossRequiredLoopCount.Value; }
         public int ScavangerRequiredLoopCount { get => _scavangerRequiredLoopCount.Value; }
+        public bool EnableFixedPool { get => _enableFixedPool.Value; }
+        public string[] FixedPool { get => _fixedPool.Value.Replace(" ", "").Split(','); }
 
         public float RespawnDelay { get => _respawnDelay.Value; }
         public RoR2.TeamIndex RespawnTeam { get => _respawnTeam.Value; }
         public float RespawnHealthMultiplier { get => _respawnHealthMultiplier.Value; }
         public float RespawnDamageMultiplier { get => _respawnDamageMultiplier.Value; }
         public float RespawnMoneyMultiplier { get => _respawnMoneyMultiplier.Value; }
+        public bool RespawnAffixEnabled { get => _respawnAffixEnabled.Value; }
         public float RespawnAffixChance { get => _respawnAffixChance.Value; }
         public float AdditionalRespawnTime { get => _additionalRespawnTime.Value; }
         public bool RespawnAsMonsterVariants { get => _respawnAsMonsterVariants.Value; }
@@ -88,12 +94,15 @@ namespace Wonda
             _blacklistedEnemies = config.Bind("Monster Categories", "BlacklistedEnemies", "BeetleBody, JellyfishBody, WispBody, MinorConstructBody, VoidBarnacleBody", "Sets monsters to prevent players from spawning as. A list of bodies can be grabbed by using body_list in the console.");
             _bossRequiredLoopCount = config.Bind("Monster Categories", "BossRequiredLoopCount", 2, "The required amount of loops before a player can spawn as a boss.");
             _scavangerRequiredLoopCount = config.Bind("Monster Categories", "ScavangerRequiredLoopCount", 5, "The required amount of loops before a player can spawn as a scavanger.");
+            _enableFixedPool = config.Bind("Monster Categories", "EnableFixedPool", false, "Forces players to respawn from a pre-defined list of monsters, instead of the current stage's monsters.");
+            _fixedPool = config.Bind("Monster Categories", "FixedPool", "LemurianBody", "Provides a fixed list of monsters that the player could spawn as with EnableFixedPool enabled. This list will also be used if there are no available monsters to spawn as.");
 
             _respawnDelay = config.Bind("Respawn Settings", "RespawnDelay", 5f, "Sets the delay until the player can respawn.");
             _respawnTeam = config.Bind("Respawn Settings", "RespawnTeam", RoR2.TeamIndex.Neutral, "Sets the team of the respawned players.");
             _respawnHealthMultiplier = config.Bind("Respawn Settings", "RespawnHealthMultiplier", 1.1f, "Multiplies the health a player spawns with.");
             _respawnDamageMultiplier = config.Bind("Respawn Settings", "RespawnDamageMultiplier", 5f, "Multiplies the damage a player spawns with.");
             _respawnMoneyMultiplier = config.Bind("Respawn Settings", "RespawnMoneyMultiplier", 1.1f, "Multiplies the money rewarded for killing a player.");
+            _respawnAffixEnabled = config.Bind("Respawn Settings", "RespawnAffixEnabled", true, "Allows players to spawn with affixes if they have an empty equipment slot.");
             _respawnAffixChance = config.Bind("Respawn Settings", "RespawnAffixChance", 60f, "Sets the chance that a respawned player will have an affix.");
             _additionalRespawnTime = config.Bind("Respawn Settings", "AdditionalRespawnTime", 0.2f, "Sets how much respawn time will increase per player death. This will effect everyone.");
             _noRespawnsAfterTeleporter = config.Bind("Respawn Settings", "NoRespawnsAfterTeleporter", true, "Disables respawning after the Teleporter event concludes.");
@@ -103,18 +112,17 @@ namespace Wonda
             _takeAffix = config.Bind("Item Settings", "TakeAffix", true, "Will take away granted affixes upon respawning.");
             _forceGrantAffix = config.Bind("Item Settings", "ForceGrantAffix", false, "Will forcibly give the player an aspect, even if they have an equipment item.");
 
-            _murderRevive = config.Bind("Behavior", "MurderRevive", true, "Will respawn a dead player as a survivor if they kill another player.");
-            _murderWindow = config.Bind("Behavior", "MurderWindow", 15f, "The amount of time that a player has after damaging a player to respawn as them.");
-            _announceRespawns = config.Bind("Behavior", "AnnounceRespawns", true, "Will announce a player respawning in the chat.");
-            _disableMoon = config.Bind("Behavior", "DisableMoon", true, "Prevents players from respawning in Commencement.");
-
-            _endGameWhenEverybodyDead = config.Bind("Debug", "EndGameWhenEverybodyDead", true, "Ends the round when everybody is dead. (Keep this on.)");
-            _maxRespawnTries = config.Bind("Debug", "MaxRespawnTries", 5, "The maximum attempts the game will make to retry spawning a player.");
-            _preventPrefabResetMethods = config.Bind("Debug", "PreventPrefabResetMethods", "SwapCharacters, RevertCharacter", "Manually set methods to not be affected by Refight's BodyPrefab-Resetting behavior. (Don't touch this unless you know what you're doing.)");
+            _murderRevive = config.Bind("Behavior Settings", "MurderRevive", true, "Will respawn a dead player as a survivor if they kill another player.");
+            _murderWindow = config.Bind("Behavior Settings", "MurderWindow", 15f, "The amount of time that a player has after damaging a player to respawn as them.");
+            _announceRespawns = config.Bind("Behavior Settings", "AnnounceRespawns", true, "Will announce a player respawning in the chat.");
+            _disableMoon = config.Bind("Behavior Settings", "DisableMoon", true, "Prevents players from respawning in Commencement.");
 
             _respawnAsMonsterVariants = config.Bind("Compatibility Settings", "RespawnAsMonsterVariants", true, "Allows players to respawn as Monster Variants.");
             _removeMonsterVariantItems = config.Bind("Compatibility Settings", "RemoveMonsterVariantItems", true, "Will remove items given to players by Monster Variants on respawn.");
 
+            _endGameWhenEverybodyDead = config.Bind("Debug", "EndGameWhenEverybodyDead", true, "Ends the round when everybody is dead. (Keep this on.)");
+            _maxRespawnTries = config.Bind("Debug", "MaxRespawnTries", 5, "The maximum attempts the game will make to retry spawning a player.");
+            _preventPrefabResetMethods = config.Bind("Debug", "PreventPrefabResetMethods", "SwapCharacters, RevertCharacter", "Manually set methods to not be affected by Refight's BodyPrefab-Resetting behavior. (Don't touch this unless you know what you're doing.)");
         }
 
         // For Risk of Options.
@@ -139,12 +147,15 @@ namespace Wonda
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StringInputFieldOption(_blacklistedEnemies));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.IntSliderOption(_bossRequiredLoopCount));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.IntSliderOption(_scavangerRequiredLoopCount));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_enableFixedPool));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.StringInputFieldOption(_fixedPool));
 
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_respawnDelay, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 60, increment = 1f } ));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.ChoiceOption(_respawnTeam));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_respawnHealthMultiplier, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 2, increment = 0.1f }));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_respawnDamageMultiplier, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 10, increment = 0.2f }));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_respawnMoneyMultiplier, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 2, increment = 0.1f }));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_respawnAffixEnabled));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.SliderOption(_respawnAffixChance));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_additionalRespawnTime, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 2, increment = 0.1f }));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_noRespawnsAfterTeleporter));
@@ -159,12 +170,12 @@ namespace Wonda
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_announceRespawns));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_disableMoon));
 
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_respawnAsMonsterVariants));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_removeMonsterVariantItems));
+
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_endGameWhenEverybodyDead));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.IntSliderOption(_maxRespawnTries));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StringInputFieldOption(_preventPrefabResetMethods));
-
-            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_respawnAsMonsterVariants));
-            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_removeMonsterVariantItems));
         }
     }
 }

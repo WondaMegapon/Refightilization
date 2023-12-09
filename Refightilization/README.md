@@ -69,17 +69,21 @@ Regarding the 1.1.7 Update, thanks to:
 
 ## 1.2.x
 
-1.2.0 - Huge compatibility overhaul! Added a RiskOfOptions config menu.
+1.2.0 - Huge compatibility overhaul! Added a RiskOfOptions config menu. Added the ability to set a fixed pool of monsters. 
+Added a config option for toggling affixes. Allowed for fallback monsters to be set if none exist.
 
 ## 1.1.x
 
 1.1.7 - Big Localization Update, Added a grace window for PVP revives.
 
-1.1.6 - Added fix for [PluginChipsMod](https://thunderstore.io/package/RumblingJOSEPH/PlugInChipsMod/1.0.11/); alongside a config option to test other mod respawn methods with and without Refight interfering with them, added Russian translation (thanks Regoioz).
+1.1.6 - Added fix for [PluginChipsMod](https://thunderstore.io/package/RumblingJOSEPH/PlugInChipsMod/1.0.11/); 
+alongside a config option to test other mod respawn methods with and without Refight interfering with them, 
+added Russian translation (thanks Regoioz).
 
 1.1.5 - Updated Readme.
 
-1.1.4 - Removed ForceItemRestoration, ReturnItemsOnStageChange, and RemoveAllItems due to instability. Minor adjustments to drone and spawning behavior. (Please send an issue report regarding any lost items.)
+1.1.4 - Removed ForceItemRestoration, ReturnItemsOnStageChange, and RemoveAllItems due to instability. 
+Minor adjustments to drone and spawning behavior. (Please send an issue report regarding any lost items.)
 
 1.1.3 - Fixed respawning in Planetarium. Adjusted spawning. Added a few secrets.
 
@@ -87,7 +91,8 @@ Regarding the 1.1.7 Update, thanks to:
 
 1.1.1 - Added French translation.
 
-1.1.0 - Updated for SotV. Fixed game over screens not reflecting a player's current survivor. Removed Classic Items and Standalone Ancient Scepter compatibility fixes. Players respawn upon a wave ending during Simulacrum.
+1.1.0 - Updated for SotV. Fixed game over screens not reflecting a player's current survivor. 
+Removed Classic Items and Standalone Ancient Scepter compatibility fixes. Players respawn upon a wave ending during Simulacrum.
 
 ## 1.0.x
 
@@ -99,9 +104,11 @@ Regarding the 1.1.7 Update, thanks to:
 
 1.0.17 - Fixed Artifact of Metamorphosis not respawning players as monsters.
 
-1.0.16 - Added config option for forcibly granting affixes. Respawning now respects preventGameOver (allowing for compatibility with Aetherium's Void Heart).
+1.0.16 - Added config option for forcibly granting affixes. Respawning now respects preventGameOver 
+(allowing for compatibility with Aetherium's Void Heart).
 
-1.0.15 - Added config options for Champion and Scavanger respawn requirements. Overhauled Affixes, now they accurately reflect the current stage's elite pool.
+1.0.15 - Added config options for Champion and Scavanger respawn requirements. Overhauled Affixes, 
+now they accurately reflect the current stage's elite pool.
 
 1.0.14 - Updated README. Added multiple revive messages. Reverted incompatibility with ArtifactOfGrief.
 
@@ -109,23 +116,32 @@ Regarding the 1.1.7 Update, thanks to:
 
 1.0.12 - Depreciated support with MonsterVariants. Improved Support with VarianceAPI. (Special thanks to Nebby)
 
-1.0.11 - Hotfixed a softlock that occurs when a user disconnects from a server! Prevented a NRE when attempting to respawn a disconnected player. Added minor performance improvements.
+1.0.11 - Hotfixed a softlock that occurs when a user disconnects from a server! Prevented a NRE when attempting to respawn a 
+disconnected player. Added minor performance improvements.
 
-1.0.10 - Added config toggle for preventing spawning as the same monster twice in a row, added config toggle for respawn announcements, added catch for players leaving mid-game, hotfixed boss and scavanger spawning, and hotfixed the previous hotfix.
+1.0.10 - Added config toggle for preventing spawning as the same monster twice in a row, added config toggle 
+for respawn announcements, added catch for players leaving mid-game, hotfixed boss and scavanger spawning, and hotfixed the previous hotfix.
 
-1.0.9 - Implemented hotfix for infinite loops while selecting monsters, added incompatibility with [ArtifactOfGrief](https://thunderstore.io/package/kking117/ArtifactOfGrief/).
+1.0.9 - Implemented hotfix for infinite loops while selecting monsters, added incompatibility 
+with [ArtifactOfGrief](https://thunderstore.io/package/kking117/ArtifactOfGrief/).
 
-1.0.8 - Added compatibility with [VarianceAPI](https://thunderstore.io/package/Nebby/VarianceAPI/), implemented hotfix for players keeping items granted by MonsterVariants, implemented hotfix for game-overs after using the teleporter.
+1.0.8 - Added compatibility with [VarianceAPI](https://thunderstore.io/package/Nebby/VarianceAPI/), 
+implemented hotfix for players keeping items granted by MonsterVariants, implemented hotfix for game-overs after using the teleporter.
 
-1.0.7 - Teleporter interaction hotfixes, possible NRE catch, fixed respawn behavior to allow for better mod compatibility, adjusted spawn rules for champions and scavangers.
+1.0.7 - Teleporter interaction hotfixes, possible NRE catch, fixed respawn behavior to allow for better mod compatibility, 
+adjusted spawn rules for champions and scavangers.
 
-1.0.6 - Caught edge case of player respawning after all players teleporting, fixed compatibility with mods that respawn players, and added feature where dead players can kill alive players to respawn.
+1.0.6 - Caught edge case of player respawning after all players teleporting, fixed compatibility with mods that respawn players, 
+and added feature where dead players can kill alive players to respawn.
 
 1.0.5 - Updated Readme, attempted to fix MonsterVariants compatibility, and adjusted player teleporter interactions.
 
 1.0.4 - Fixed compatibility with ClassicItems and StandaloneAncientScepter, and added config for Aspects.
 
-1.0.3 - Added item configs, added config for MonsterVariants, added scaling respawn timer, prevented respawning as a recently spawned monster, caught bugs regarding disabling the mod, adjusted spawning to prevent softlocks, altered Affix code to give players Elite Aspects instead of buffing them, adjusted spawning to prevent being unable to pick up items, added functionality with some artifacts.
+1.0.3 - Added item configs, added config for MonsterVariants, added scaling respawn timer, prevented respawning as a 
+recently spawned monster, caught bugs regarding disabling the mod, adjusted spawning to prevent softlocks, 
+altered Affix code to give players Elite Aspects instead of buffing them, adjusted spawning to prevent being unable to pick up items, 
+added functionality with some artifacts.
 
 1.0.2 - Caught some NREs, fixed R2API dependencies.
 
