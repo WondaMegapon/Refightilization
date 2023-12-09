@@ -353,7 +353,7 @@ namespace Wonda
             yield return new WaitForSeconds(waitTime);
 
             // ABORT ABORT THE GAME DOESN'T EXIST
-            if (!Run.instance.isActiveAndEnabled) yield break;
+            if (!Run.instance || !Run.instance.isActiveAndEnabled) yield break;
 
             // Wait... Yea disable functionality if the mod is disabled.
             if (!_config.EnableRefightilization)
