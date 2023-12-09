@@ -1,0 +1,14 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+{
+	"en": {
+		"REFIGHT_MOD_NAME": "Refightilization",
+		"REFIGHT_MOD_DESCRIPTION": "Allows players to respawn as a monster when they die."
+	},
+	"tok": {
+		"REFIGHT_MOD_NAME": "Refightilization",
+		"REFIGHT_MOD_DESCRIPTION": "jan li moli la jan li monsuta."
+	}
+}

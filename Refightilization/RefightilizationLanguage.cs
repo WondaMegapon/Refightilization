@@ -11,6 +11,7 @@ namespace Wonda
     {
         public List<string> ReviveMessages { get; set; }
         public List<string> RevengeMessages { get; set; }
+        public string RiskOfOptionsDescription { get; set; }
 
         public RefightilizationLanguage()
         {
@@ -21,7 +22,7 @@ namespace Wonda
             string currLang = Language.currentLanguageName;
 
             // Grabbing the file
-            Stream stream = File.Open(System.Reflection.Assembly.GetExecutingAssembly().Location.Replace("Refightilization.dll", "") + "LanguageResource.json", FileMode.Open, FileAccess.Read);
+            FileStream stream = File.Open(System.Reflection.Assembly.GetExecutingAssembly().Location.Replace("Refightilization.dll", "") + "LanguageResource.json", FileMode.Open, FileAccess.Read);
             StreamReader streamReader = new StreamReader(stream, Encoding.Unicode); // THE FILE MUST BE SAVED WITH ENCODING CODEPAGE 1200 OR EVERYTHING BREAKS.
             string streamRead = streamReader.ReadToEnd();
 

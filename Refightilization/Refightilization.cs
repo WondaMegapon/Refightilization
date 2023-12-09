@@ -90,6 +90,7 @@ namespace Wonda
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.Nebby.VarianceAPI", out var varianceAPI)) _varianceAPI = varianceAPI;
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.ThinkInvisible.ClassicItems", out var classicItemsPlugin)) _classicItems = classicItemsPlugin;
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.DestroyedClone.AncientScepter", out var standaloneAncientScepterPlugin)) _standaloneAncientScepter = standaloneAncientScepterPlugin;
+            if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.rune580.riskofoptions", out var riskOfOptionsPlugin)) _config.BuildRiskOfOptionsMenu();
         }
 
         // Hook setup.

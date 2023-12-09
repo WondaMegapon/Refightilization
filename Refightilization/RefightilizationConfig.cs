@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.IO;
 using BepInEx;
 using BepInEx.Configuration;
+using RiskOfOptions;
 
 namespace Wonda
 {
@@ -92,12 +96,10 @@ namespace Wonda
             _respawnMoneyMultiplier = config.Bind("Respawn Settings", "RespawnMoneyMultiplier", 1.1f, "Multiplies the money rewarded for killing a player.");
             _respawnAffixChance = config.Bind("Respawn Settings", "RespawnAffixChance", 60f, "Sets the chance that a respawned player will have an affix.");
             _additionalRespawnTime = config.Bind("Respawn Settings", "AdditionalRespawnTime", 0.2f, "Sets how much respawn time will increase per player death. This will effect everyone.");
-            _respawnAsMonsterVariants = config.Bind("Respawn Settings", "RespawnAsMonsterVariants", true, "Allows players to respawn as Monster Variants.");
             _noRespawnsAfterTeleporter = config.Bind("Respawn Settings", "NoRespawnsAfterTeleporter", true, "Disables respawning after the Teleporter event concludes.");
             _noRepeatRespawns = config.Bind("Respawn Settings", "NoRepeatRespawns", true, "Will attempt to prevent the player from respawning as the same monster twice in a row.");
 
             _itemPickupToggle = config.Bind("Item Settings", "ItemPickupToggle", true, "Allows monster players to pick up items off the ground. (Disabling won't work if RespawnTeam is set to Player.)");
-            _removeMonsterVariantItems = config.Bind("Item Settings", "RemoveMonsterVariantItems", true, "Will remove items given to players by Monster Variants on respawn.");
             _takeAffix = config.Bind("Item Settings", "TakeAffix", true, "Will take away granted affixes upon respawning.");
             _forceGrantAffix = config.Bind("Item Settings", "ForceGrantAffix", false, "Will forcibly give the player an aspect, even if they have an equipment item.");
 
@@ -109,6 +111,60 @@ namespace Wonda
             _endGameWhenEverybodyDead = config.Bind("Debug", "EndGameWhenEverybodyDead", true, "Ends the round when everybody is dead. (Keep this on.)");
             _maxRespawnTries = config.Bind("Debug", "MaxRespawnTries", 5, "The maximum attempts the game will make to retry spawning a player.");
             _preventPrefabResetMethods = config.Bind("Debug", "PreventPrefabResetMethods", "SwapCharacters, RevertCharacter", "Manually set methods to not be affected by Refight's BodyPrefab-Resetting behavior. (Don't touch this unless you know what you're doing.)");
+
+            _respawnAsMonsterVariants = config.Bind("Compatibility Settings", "RespawnAsMonsterVariants", true, "Allows players to respawn as Monster Variants.");
+            _removeMonsterVariantItems = config.Bind("Compatibility Settings", "RemoveMonsterVariantItems", true, "Will remove items given to players by Monster Variants on respawn.");
+
+        }
+
+        // For Risk of Options.
+        public void BuildRiskOfOptionsMenu()
+        {
+            // Grabbing our icon.
+            byte[] iconData = File.ReadAllBytes(System.Reflection.Assembly.GetExecutingAssembly().Location.Replace("Refightilization.dll", "") + "icon.png");
+
+            // Some flavor.
+            UnityEngine.Texture2D modIconSprite = new UnityEngine.Texture2D(256, 256);
+            UnityEngine.ImageConversion.LoadImage(modIconSprite, iconData);
+            UnityEngine.Sprite modIcon = UnityEngine.Sprite.Create(modIconSprite, new UnityEngine.Rect(0, 0, modIconSprite.width, modIconSprite.height), UnityEngine.Vector2.zero);
+
+            ModSettingsManager.SetModIcon(modIcon);
+            ModSettingsManager.SetModDescriptionToken("REFIGHT_MOD_DESCRIPTION");
+
+            // For all of our settings:
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_enableRefightilization));
+
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_allowBosses));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_allowScavengers));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.StringInputFieldOption(_blacklistedEnemies));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.IntSliderOption(_bossRequiredLoopCount));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.IntSliderOption(_scavangerRequiredLoopCount));
+
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_respawnDelay, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 60, increment = 1f } ));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.ChoiceOption(_respawnTeam));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_respawnHealthMultiplier, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 2, increment = 0.1f }));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_respawnDamageMultiplier, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 10, increment = 0.2f }));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_respawnMoneyMultiplier, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 2, increment = 0.1f }));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.SliderOption(_respawnAffixChance));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_additionalRespawnTime, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 2, increment = 0.1f }));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_noRespawnsAfterTeleporter));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_noRepeatRespawns));
+
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_itemPickupToggle));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_takeAffix));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_forceGrantAffix));
+
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_murderRevive));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_murderWindow, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 1, max = 60, increment = 1f }));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_announceRespawns));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_disableMoon));
+
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_endGameWhenEverybodyDead));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.IntSliderOption(_maxRespawnTries));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.StringInputFieldOption(_preventPrefabResetMethods));
+
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_respawnAsMonsterVariants));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_removeMonsterVariantItems));
         }
     }
 }

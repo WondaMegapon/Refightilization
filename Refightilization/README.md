@@ -69,7 +69,7 @@ Regarding the 1.1.7 Update, thanks to:
 
 ## 1.2.x
 
-1.2.0 - Huge compatibility overhaul!
+1.2.0 - Huge compatibility overhaul! Added a RiskOfOptions config menu.
 
 ## 1.1.x
 
