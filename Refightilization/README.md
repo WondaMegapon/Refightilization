@@ -67,6 +67,12 @@ Regarding the 1.1.7 Update, thanks to:
 
 # Changelog
 
+## 1.2.x
+
+1.2.0 - Huge compatibility overhaul!
+
+## 1.1.x
+
 1.1.7 - Big Localization Update, Added a grace window for PVP revives.
 
 1.1.6 - Added fix for [PluginChipsMod](https://thunderstore.io/package/RumblingJOSEPH/PlugInChipsMod/1.0.11/); alongside a config option to test other mod respawn methods with and without Refight interfering with them, added Russian translation (thanks Regoioz).
@@ -82,6 +88,8 @@ Regarding the 1.1.7 Update, thanks to:
 1.1.1 - Added French translation.
 
 1.1.0 - Updated for SotV. Fixed game over screens not reflecting a player's current survivor. Removed Classic Items and Standalone Ancient Scepter compatibility fixes. Players respawn upon a wave ending during Simulacrum.
+
+## 1.0.x
 
 1.0.20 - Fixed compatibility with VAPI.
 

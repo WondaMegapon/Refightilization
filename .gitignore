@@ -26,6 +26,7 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+[Rr]ef/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -338,6 +339,3 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
-
-# I don't want this ref file shared
-ref/

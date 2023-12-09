@@ -21,6 +21,7 @@ namespace Wonda
     [BepInDependency("com.ThinkInvisible.TILER2", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.ThinkInvisible.ClassicItems", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.DestroyedClone.AncientScepter", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.rune580.riskofoptions", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin(guid, modName, version)]
     public class Refightilization : BaseUnityPlugin
     {
@@ -30,7 +31,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.1.7";
+        const string version = "1.2.0";
 
         // Config
         private RefightilizationConfig _config;
