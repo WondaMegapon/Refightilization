@@ -80,7 +80,7 @@ namespace Wonda
         {
             _config = new RefightilizationConfig(Config);
             SetupHooks();
-            respawnMethodCheck.AddRange(_config.PreventPrefabResetMethods);
+            respawnMethodCheck = _config.PreventPrefabResetMethods.ToList();
             Logger.LogInfo("Loaded Refightilization!");
         }
 
@@ -120,6 +120,7 @@ namespace Wonda
             respawnTime = _config.RespawnDelay; // Making sure that this function exists on a per run basis.
             SetupPlayers(); // Gotta make sure players are properly stored once the run begins.
             SetupLang(); // For all of our wacky lines we need said.
+            respawnMethodCheck = _config.PreventPrefabResetMethods.ToList();
             moonDisabled = false; // Moonless
         }
 
@@ -370,7 +371,7 @@ namespace Wonda
             }
 
             // Aaand moon prevention.
-            if (moonDisabled)
+            if (_config.DisableMoon && moonDisabled)
             {
                 Logger.LogInfo("Respawn prevented due to current stage.");
                 yield break;
@@ -418,7 +419,7 @@ namespace Wonda
                         player.inventory.CopyItemsFrom(player.master.inventory); // Copy all their items.
                     }
 
-                    player.master.teamIndex = (TeamIndex)_config.RespawnTeam; // Moved out here in-case config is changed mid-game.
+                    player.master.teamIndex = _config.RespawnTeam; // Moved out here in-case config is changed mid-game.
                     respawnLoops = 0; // Setting our loops in-case something breaks in RefightRespawn.
                     RefightRespawn(player.master, deathPos); // Begin respawning the player.
                 }
