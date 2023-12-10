@@ -95,7 +95,7 @@ namespace Wonda
 
             _allowBosses = config.Bind("Monster Categories", "AllowBosses", true, "Allows players to spawn as bosses.");
             _allowScavengers = config.Bind("Monster Categories", "AllowScavengers", false, "Allows players to spawn as Scavengers.");
-            _blacklistedEnemies = config.Bind("Monster Categories", "BlacklistedEnemies", "BeetleBody, JellyfishBody, WispBody, MinorConstructBody, VoidBarnacleBody", "Sets monsters to prevent players from spawning as. A list of bodies can be grabbed by using body_list in the console.");
+            _blacklistedEnemies = config.Bind("Monster Categories", "BlacklistedEnemies", "BeetleBody, JellyfishBody, WispBody, MinorConstructBody, VoidBarnacleBody, ClayBossBody", "Sets monsters to prevent players from spawning as. A list of bodies can be grabbed by using body_list in the console.");
             _bossRequiredLoopCount = config.Bind("Monster Categories", "BossRequiredLoopCount", 2, "The required amount of loops before a player can spawn as a boss.");
             _scavangerRequiredLoopCount = config.Bind("Monster Categories", "ScavangerRequiredLoopCount", 5, "The required amount of loops before a player can spawn as a scavanger.");
             _enableFixedPool = config.Bind("Monster Categories", "EnableFixedPool", false, "Forces players to respawn from a pre-defined list of monsters, instead of the current stage's monsters.");
@@ -128,7 +128,7 @@ namespace Wonda
 
             _endGameWhenEverybodyDead = config.Bind("Debug", "EndGameWhenEverybodyDead", true, "Ends the round when everybody is dead. (Keep this on.)");
             _maxRespawnTries = config.Bind("Debug", "MaxRespawnTries", 5, "The maximum attempts the game will make to retry spawning a player.");
-            _preventPrefabResetMethods = config.Bind("Debug", "PreventPrefabResetMethods", "SwapCharacters, RevertCharacter", "Manually set methods to not be affected by Refight's BodyPrefab-Resetting behavior. (Don't touch this unless you know what you're doing.)");
+            _preventPrefabResetMethods = config.Bind("Debug", "PreventPrefabResetMethods", "SwapCharacters, RevertCharacter, CCSpawnAs", "Manually set methods to not be affected by Refight's BodyPrefab-Resetting behavior. (Don't touch this unless you know what you're doing.)");
         }
 
         // For Risk of Options.
@@ -183,7 +183,7 @@ namespace Wonda
 
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_endGameWhenEverybodyDead));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.IntSliderOption(_maxRespawnTries));
-            ModSettingsManager.AddOption(new RiskOfOptions.Options.StringInputFieldOption(_preventPrefabResetMethods));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.StringInputFieldOption(_preventPrefabResetMethods, new RiskOfOptions.OptionConfigs.InputFieldConfig() { restartRequired = true }));
         }
     }
 }
