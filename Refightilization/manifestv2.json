@@ -15,7 +15,9 @@
   "OptionalDependencies": [
     "Rune580-Risk_Of_Options-2.7.1"
   ],
-  "Incompatibilities": [],
+  "Incompatibilities": [
+    "KosmosisDire-TeammateRevival-4.1.4"
+  ],
   "NetworkMode": "server",
   "PackageType": "mod",
   "InstallMode": "managed",

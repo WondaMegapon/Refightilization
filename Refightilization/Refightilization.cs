@@ -81,6 +81,8 @@ namespace Wonda
             _config = new RefightilizationConfig(Config);
             SetupHooks();
             respawnMethodCheck = _config.PreventPrefabResetMethods.ToList();
+            foreach (string item in respawnMethodCheck)
+                Logger.LogDebug(item);
             Logger.LogInfo("Loaded Refightilization!");
         }
 
@@ -121,6 +123,8 @@ namespace Wonda
             SetupPlayers(); // Gotta make sure players are properly stored once the run begins.
             SetupLang(); // For all of our wacky lines we need said.
             respawnMethodCheck = _config.PreventPrefabResetMethods.ToList();
+            foreach (string item in respawnMethodCheck)
+                Logger.LogDebug(item);
             moonDisabled = false; // Moonless
         }
 
@@ -497,6 +501,7 @@ namespace Wonda
             if (player.bodyPrefab && randomMonster)
             {
                 player.bodyPrefab = randomMonster;
+                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was assigned to " + player.bodyPrefab.name + ".");
             }
             else
             {
@@ -504,7 +509,6 @@ namespace Wonda
                 RefightRespawn(player, deathPos);
                 return;
             }
-            Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was assigned to " + player.bodyPrefab.name + ".");
 
             // Grabbing a viable position for the player to spawn in.
             Vector3 newPos = deathPos; // Starting with where the player dies, if all else fails.
