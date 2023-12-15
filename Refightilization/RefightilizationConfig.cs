@@ -183,7 +183,7 @@ namespace Wonda
 
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_endGameWhenEverybodyDead));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.IntSliderOption(_maxRespawnTries));
-            ModSettingsManager.AddOption(new RiskOfOptions.Options.StringInputFieldOption(_preventPrefabResetMethods));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.StringInputFieldOption(_preventPrefabResetMethods, new RiskOfOptions.OptionConfigs.InputFieldConfig() { restartRequired = true }));
         }
     }
 }

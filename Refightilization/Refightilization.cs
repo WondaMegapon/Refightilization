@@ -81,9 +81,7 @@ namespace Wonda
         {
             _config = new RefightilizationConfig(Config);
             SetupHooks();
-            respawnMethodCheck = _config.PreventPrefabResetMethods.ToList();
-            foreach (string item in respawnMethodCheck)
-                Logger.LogDebug(item);
+            respawnMethodCheck.AddRange(_config.PreventPrefabResetMethods);
             Logger.LogInfo("Loaded Refightilization!");
         }
 
@@ -123,9 +121,6 @@ namespace Wonda
             respawnTime = _config.RespawnDelay; // Making sure that this function exists on a per run basis.
             SetupPlayers(); // Gotta make sure players are properly stored once the run begins.
             SetupLang(); // For all of our wacky lines we need said.
-            respawnMethodCheck = _config.PreventPrefabResetMethods.ToList();
-            foreach (string item in respawnMethodCheck)
-                Logger.LogDebug(item);
             moonDisabled = false; // Moonless
         }
 
