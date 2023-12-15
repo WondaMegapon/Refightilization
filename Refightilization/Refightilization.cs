@@ -46,16 +46,17 @@ namespace Wonda
         // Class to make players easier to manage
         public class PlayerStorage
         {
-            public NetworkUser user = null;
-            public CharacterMaster master = null;
-            public GameObject origPrefab = null;
-            public bool isDead = false;
-            public Inventory inventory = null;
-            public bool giftedAffix = false;
-            public bool hadAncientScepter = false;
-            public EquipmentIndex previousEquipment = EquipmentIndex.None;
-            public NetworkUser lastDamagedBy = null;
-            public float lastDamagedTime = 0;
+            public NetworkUser user = null; // The network user of the player.
+            public CharacterMaster master = null; // The character master of the player.
+            public GameObject origPrefab = null; // The original surivor the player was playing as.
+            public bool isDead = false; // A tracker for if the player was dead or not.
+            public Inventory inventory = null; // The inventory the player originally had.
+            public bool giftedAffix = false; // A tracker for if the player has recieved an affix from the mod.
+            public bool hadAncientScepter = false; // A tracker for if the player had the Ancient Scepter.
+            public EquipmentIndex previousEquipment = EquipmentIndex.None; // The equipment the player previously had.
+            public NetworkUser lastDamagedBy = null; // The network user that previously attacked this player.
+            public float lastDamagedTime = 0; // The time this player was last attacked by a network user.
+            public bool loggedOut = false; // A tracker for if the player left the server prematurely.
         }
 
         // The actual class to use.
@@ -192,7 +193,22 @@ namespace Wonda
         {
             orig(self, user);
             if (Run.instance.time > 1f && _config.EnableRefightilization)
-                SetupPlayers(false); // For players who enter the game late.
+            {
+                bool playerWasLoggedOut = false; // Tracking if the player existed at one point.
+
+                foreach (PlayerStorage player in playerStorage)
+                {
+                    if (player.user.userName == user.userName)
+                    {
+                        player.loggedOut = false;
+                        playerWasLoggedOut = true;
+                        Logger.LogInfo(user.userName + " returned. Marking them as logged in.");
+                        break;
+                    }
+                }
+
+                if (!playerWasLoggedOut) SetupPlayers(false); // For players who enter the game late.
+            }
         }
 
         private void Run_OnUserRemoved(On.RoR2.Run.orig_OnUserRemoved orig, Run self, NetworkUser user)
@@ -200,17 +216,15 @@ namespace Wonda
             orig(self, user);
             if (Run.instance.time > 1f && _config.EnableRefightilization)
             {
-                PlayerStorage target = null;
                 foreach (PlayerStorage player in playerStorage)
                 {
                     if (player.user.userName == user.userName)
                     {
-                        target = player;
-                        Logger.LogInfo(user.userName + " left. Removing them from PlayerStorage.");
+                        player.loggedOut = true; // Marking the player as returned.
+                        Logger.LogInfo(user.userName + " left. Marking them as logged out.");
                         break;
                     }
                 }
-                playerStorage.Remove(target);
             }
         }
 
@@ -403,7 +417,7 @@ namespace Wonda
                     yield break;
                 }
 
-                if (player.master.IsDeadAndOutOfLivesServer())
+                if (player.master.IsDeadAndOutOfLivesServer() && !player.loggedOut)
                 {
                     Logger.LogInfo(player.user.userName + " passed spawn check!");
 
