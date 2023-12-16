@@ -52,8 +52,6 @@
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
     </Reference>
-    <Reference Include="UnityEngine.Networking">
-    </Reference>
     <Reference Include="com.unity.multiplayer-hlapi.Runtime">
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
