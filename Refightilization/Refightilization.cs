@@ -56,7 +56,8 @@ namespace Wonda
             public EquipmentIndex previousEquipment = EquipmentIndex.None; // The equipment the player previously had.
             public NetworkUser lastDamagedBy = null; // The network user that previously attacked this player.
             public float lastDamagedTime = 0; // The time this player was last attacked by a network user.
-            public bool loggedOut = false; // A tracker for if the player left the server prematurely.
+            public bool isLoggedOut = false; // A tracker for if the player left the server prematurely.
+            public int lastStage = 0; // The last stage the player was on. Used for checking if they need to be reset after logging out.
         }
 
         // The actual class to use.
@@ -195,10 +196,24 @@ namespace Wonda
                 {
                     if (player.user.userName == user.userName)
                     {
-                        player.loggedOut = false;
-                        playerWasLoggedOut = true;
+                        player.user = user; // Resetting the current user.
+                        player.master = user.master; // Also resetting their master.
+                        player.isLoggedOut = false; // They're no longer logged out.
+                        playerWasLoggedOut = true; // Confirming this for when the game wants to run SetupPlayers again.
                         Logger.LogInfo(user.userName + " returned. Marking them as logged in.");
-                        break;
+
+                        if (player.lastStage < Run.instance.stageClearCount && user.master && Stage.instance)
+                        {
+                            Invoke("NaturalRespawnCharacter", 3f); // Invoking a respawn for the dead.
+                        } else
+                        {
+                            player.isDead = true; // Making them dead so we can respawn them again in our funny loops.
+                            StartCoroutine(RespawnCheck(player.master.transform.position, 3)); // Spawning in players shortly after a delay.
+                        }
+
+                        player.master.inventory.CopyItemsFrom(player.inventory); // Copying the inventory.
+
+                        break; // Getting out of this loop.
                     }
                 }
 
@@ -206,8 +221,32 @@ namespace Wonda
             }
         }
 
+        // For allowing us to respawn rejoined players.
+        private void NaturalRespawnCharacter()
+        {
+            foreach (PlayerStorage player in playerStorage)
+            {
+                if(!player.isDead && !player.isLoggedOut && !player.master.GetBody())
+                {
+                    Stage.instance.RespawnCharacter(player.master); // Respawnning a logged in, non-dead player.
+                }
+            }
+        }
+
         private void Run_OnUserRemoved(On.RoR2.Run.orig_OnUserRemoved orig, Run self, NetworkUser user)
         {
+            if (Run.instance.time > 1f && _config.EnableRefightilization)
+            {
+                foreach (PlayerStorage player in playerStorage)
+                {
+                    if (player.user.userName == user.userName)
+                    {
+                        CleanPlayer(player); // Cleaning this player up.
+                        player.inventory.CopyItemsFrom(user.master.inventory); // Storing all of their goodies.
+                        break;
+                    }
+                }
+            }
             orig(self, user);
             if (Run.instance.time > 1f && _config.EnableRefightilization)
             {
@@ -215,7 +254,8 @@ namespace Wonda
                 {
                     if (player.user.userName == user.userName)
                     {
-                        player.loggedOut = true; // Marking the player as returned.
+                        player.isLoggedOut = true; // Marking the player as returned.
+                        player.lastStage = Run.instance.stageClearCount; // Setting their last stage to the current clear count.
                         Logger.LogInfo(user.userName + " left. Marking them as logged out.");
                         break;
                     }
@@ -328,11 +368,10 @@ namespace Wonda
                 // Skipping over Disconnected Players.
                 if (playerStorage != null && playerCharacterMaster.networkUser == null)
                 {
-                    Logger.LogInfo("A player disconnected! Skipping over what remains of them...");
                     continue;
                 }
 
-                // If this is ran mid-stage, just skip over existing players and add anybody who joined.
+                // If this is ran mid-game, just skip over existing players and add anybody who joined.
                 if (!StageUpdate && playerStorage != null)
                 {
                     // Skipping over players that are already in the game.
@@ -412,7 +451,7 @@ namespace Wonda
                     yield break;
                 }
 
-                if (player.master.IsDeadAndOutOfLivesServer() && !player.loggedOut)
+                if (player.master.IsDeadAndOutOfLivesServer() && !player.isLoggedOut)
                 {
                     Logger.LogInfo(player.user.userName + " passed spawn check!");
 
@@ -637,7 +676,7 @@ namespace Wonda
                 if (player.isDead) CleanPlayer(player);
                 Logger.LogInfo(player.user.userName + "'s prefab reset.");
             }
-            SetupPlayers();
+            //SetupPlayers();
             Logger.LogInfo("Reset player prefabs!");
         }
 

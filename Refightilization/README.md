@@ -72,7 +72,7 @@ Regarding the 1.1.7 Update, thanks to:
 1.2.0 - Huge compatibility overhaul! Added a RiskOfOptions config menu. Added the ability to set a fixed pool of monsters. 
 Added a config option for toggling affixes. Allowed for fallback monsters to be set if none exist. Added a config option for overriding
 metamorphosis's behavior. Fixed minions changing teams when a player respawns. Changed default config options for better compatibility.
-Added incompatibility with TeammateRevival.
+Added incompatibility with TeammateRevival. Added proper handling for players leaving and rejoining servers.
 
 ## 1.1.x
 
