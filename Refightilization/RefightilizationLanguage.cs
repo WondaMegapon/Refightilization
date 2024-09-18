@@ -11,6 +11,7 @@ namespace Wonda
     {
         public List<string> ReviveMessages { get; set; }
         public List<string> RevengeMessages { get; set; }
+        public string ItemBlacklistWarning { get; set; }
         public string RiskOfOptionsDescription { get; set; }
 
         public RefightilizationLanguage()
@@ -18,6 +19,7 @@ namespace Wonda
             // Initializing our lists
             ReviveMessages = new List<string>();
             RevengeMessages = new List<string>();
+            ItemBlacklistWarning = "{0}'s {1} will be returned, later.";
 
             string currLang = Language.currentLanguageName;
 
@@ -35,6 +37,10 @@ namespace Wonda
             // Adding the arrays to our lists.
             ConvertArrayToStringList(lang[currLang]["reviveMessages"].AsArray, ReviveMessages);
             ConvertArrayToStringList(lang[currLang]["revengeMessages"].AsArray, RevengeMessages);
+            ItemBlacklistWarning = lang[currLang]["itemBlacklistWarning"];
+
+            // Closing our stream.
+            streamReader.Close();
         }
 
         private void ConvertArrayToStringList(JSONArray input, List<string> output)

@@ -1,25 +1,20 @@
 ﻿using BepInEx;
 using RoR2;
+using RoR2.Orbs;
 using RoR2.Navigation;
 using R2API.Utils;
 using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Linq;
+using System.Security;
+using System.Security.Permissions;
 using UnityEngine;
-using VarianceAPI;
-using VarianceAPI.Components;
-using VarianceAPI.ScriptableObjects;
 
 namespace Wonda
 {
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync)]
     [BepInDependency("com.bepis.r2api", BepInDependency.DependencyFlags.HardDependency)]
-    [BepInDependency("com.Nebby.VarianceAPI", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency("com.ThinkInvisible.TILER2", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency("com.ThinkInvisible.ClassicItems", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency("com.DestroyedClone.AncientScepter", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.rune580.riskofoptions", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin(guid, modName, version)]
     public class Refightilization : BaseUnityPlugin
@@ -30,18 +25,13 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.2.0";
+        const string version = "1.2.1";
 
         // Config
         private RefightilizationConfig _config;
 
         // Language Management Stuff
         private RefightilizationLanguage _language;
-
-        // Additional mods to hook into for balance reasons.
-        private PluginInfo _varianceAPI;
-        private PluginInfo _classicItems;
-        private PluginInfo _standaloneAncientScepter;
 
         // Class to make players easier to manage
         public class PlayerStorage
@@ -51,11 +41,11 @@ namespace Wonda
             public GameObject origPrefab = null; // The original surivor the player was playing as.
             public bool isDead = false; // A tracker for if the player was dead or not.
             public Inventory inventory = null; // The inventory the player originally had.
+            public Inventory blacklistedInventory = null; // For storing any items that the player wasn't supposed to have.
             public bool giftedAffix = false; // A tracker for if the player has recieved an affix from the mod.
-            public bool hadAncientScepter = false; // A tracker for if the player had the Ancient Scepter.
             public EquipmentIndex previousEquipment = EquipmentIndex.None; // The equipment the player previously had.
             public NetworkUser lastDamagedBy = null; // The network user that previously attacked this player.
-            public float lastDamagedTime = 0; // The time this player was last attacked by a network user.
+            public float lastDamagedTime = 0; // Thevar time this player was last attacked by a network user.
             public bool isLoggedOut = false; // A tracker for if the player left the server prematurely.
             public int lastStage = 0; // The last stage the player was on. Used for checking if they need to be reset after logging out.
         }
@@ -76,6 +66,7 @@ namespace Wonda
         public List<GameObject> currEnemyWhitelist = new List<GameObject>(); // For optimization, keeping track of the current stage's whitelist.
         public List<GameObject> currSpecialEnemyWhitelist = new List<GameObject>(); // For optimization, keeping track of the current stage's whitelist.
         public List<EquipmentIndex> currEliteWhitelist = new List<EquipmentIndex>(); // Another optimization, keeping track of the current stage's elites.
+        public List<ItemIndex> currItemBlacklist = new List<ItemIndex>(); // It'll be so many foreach statements running every time somebody dies unless we store those items somewhere.
         public bool moonDisabled; // For disabling spawning on the moon due to softlocks.
 
         public void Awake()
@@ -89,9 +80,6 @@ namespace Wonda
         public void Start()
         {
             // Setting up all the mod compatibility.
-            if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.Nebby.VarianceAPI", out var varianceAPI)) _varianceAPI = varianceAPI;
-            if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.ThinkInvisible.ClassicItems", out var classicItemsPlugin)) _classicItems = classicItemsPlugin;
-            if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.DestroyedClone.AncientScepter", out var standaloneAncientScepterPlugin)) _standaloneAncientScepter = standaloneAncientScepterPlugin;
             if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.rune580.riskofoptions", out var riskOfOptionsPlugin)) _config.BuildRiskOfOptionsMenu();
         }
 
@@ -103,14 +91,16 @@ namespace Wonda
         {
             On.RoR2.Run.Start += Run_Start;
             On.RoR2.GlobalEventManager.OnPlayerCharacterDeath += GlobalEventManager_OnPlayerCharacterDeath;
-            RoR2.GlobalEventManager.onServerDamageDealt += GlobalEventManager_onServerDamageDealt;
+            GlobalEventManager.onServerDamageDealt += GlobalEventManager_onServerDamageDealt;
             On.RoR2.Run.OnServerSceneChanged += Run_OnServerSceneChanged;
             On.RoR2.Run.OnUserAdded += Run_OnUserAdded;
             On.RoR2.Run.OnUserRemoved += Run_OnUserRemoved;
             On.RoR2.TeleporterInteraction.OnInteractionBegin += TeleporterInteraction_OnInteractionBegin;
             On.RoR2.GenericPickupController.AttemptGrant += GenericPickupController_AttemptGrant;
+            On.RoR2.Inventory.GiveItem_ItemIndex_int += Inventory_GiveItem_ItemIndex_int;
             On.RoR2.CharacterMaster.Respawn += CharacterMaster_Respawn;
             On.RoR2.CharacterMaster.PickRandomSurvivorBodyPrefab += CharacterMaster_PickRandomSurvivorBodyPrefab;
+            On.RoR2.CharacterMaster.IsDeadAndOutOfLivesServer += CharacterMaster_IsDeadAndOutOfLivesServer;
             On.RoR2.Run.BeginGameOver += Run_BeginGameOver;
             On.RoR2.InfiniteTowerRun.OnWaveAllEnemiesDefeatedServer += InfiniteTowerRun_OnWaveAllEnemiesDefeatedServer;
         }
@@ -127,7 +117,6 @@ namespace Wonda
 
         private void GlobalEventManager_OnPlayerCharacterDeath(On.RoR2.GlobalEventManager.orig_OnPlayerCharacterDeath orig, GlobalEventManager self, DamageReport damageReport, NetworkUser victimNetworkUser)
         {
-            if (_config.EnableRefightilization) RemoveMonsterVariantItems(victimNetworkUser.master); // Was player previously a monster variant? Gotta take away those items if the server owner wants that.
             orig(self, damageReport, victimNetworkUser);
             if (!_config.EnableRefightilization) return;
 
@@ -175,13 +164,14 @@ namespace Wonda
 
         private void Run_OnServerSceneChanged(On.RoR2.Run.orig_OnServerSceneChanged orig, Run self, string sceneName)
         {
-            if (_config.EnableRefightilization) StopCoroutine(RespawnCheck());
+            if (_config.EnableRefightilization) StopCoroutine(RespawnCheck()); // Stop any current respawn checks.
             orig(self, sceneName);
             if (!_config.EnableRefightilization) return; // Kinda pointless to do anything if the mod is disabled.
-            if (sceneName.Equals("moon") || sceneName.Equals("moon2")) moonDisabled = true;
+            if (sceneName.Equals("moon") || sceneName.Equals("moon2")) moonDisabled = true; // Disabling everything if we're on the moon.
             if (self.stageClearCount > 0) ResetPrefabs(); // Gotta make sure players respawn as their desired class.
             Invoke("UpdateStageWhitelist", 1f); // Gotta make sure we have an accurate monster selection.
             Invoke("UpdateEliteWhitelist", 1f); // Gotta make sure we have an accurate elite selection.
+            Invoke("UpdateBlacklistedItems", 1f); // New baby! Here to check up on all the blacklisted items, too.
             respawnTime = _config.RespawnDelay; // Setting our wacky respawn delay.
         }
 
@@ -200,7 +190,7 @@ namespace Wonda
                         player.master = user.master; // Also resetting their master.
                         player.isLoggedOut = false; // They're no longer logged out.
                         playerWasLoggedOut = true; // Confirming this for when the game wants to run SetupPlayers again.
-                        Logger.LogInfo(user.userName + " returned. Marking them as logged in.");
+                        Logger.LogDebug(user.userName + " returned. Marking them as logged in.");
 
                         if (player.lastStage < Run.instance.stageClearCount && user.master && Stage.instance)
                         {
@@ -212,6 +202,7 @@ namespace Wonda
                         }
 
                         player.master.inventory.CopyItemsFrom(player.inventory); // Copying the inventory.
+                        player.blacklistedInventory = new Inventory(); // Creating a blacklisted inventory, for storage.
 
                         break; // Getting out of this loop.
                     }
@@ -256,7 +247,7 @@ namespace Wonda
                     {
                         player.isLoggedOut = true; // Marking the player as returned.
                         player.lastStage = Run.instance.stageClearCount; // Setting their last stage to the current clear count.
-                        Logger.LogInfo(user.userName + " left. Marking them as logged out.");
+                        Logger.LogDebug(user.userName + " left. Marking them as logged out.");
                         break;
                     }
                 }
@@ -269,7 +260,6 @@ namespace Wonda
             {
                 foreach (PlayerStorage player in playerStorage)
                 {
-                    if (self.isCharged) RemoveMonsterVariantItems(player.master);
                     if (self.isCharged) StopCoroutine(RespawnCheck());
                     if (player.master != null && player.master.GetBody() != null && player.master.GetBody().gameObject == activator.gameObject && player.isDead && player.master.teamIndex != TeamIndex.Player && playerStorage.Count > 1) return; 
                     // If there's multiple players, then dead ones won't be able to activate the teleporter.
@@ -278,26 +268,72 @@ namespace Wonda
             orig(self, activator);
         }
 
+        // Whenever an item is attempted to be picked up.
         private void GenericPickupController_AttemptGrant(On.RoR2.GenericPickupController.orig_AttemptGrant orig, GenericPickupController self, CharacterBody body)
         {
             if (_config.EnableRefightilization)
             {
-                foreach (PlayerStorage player in playerStorage)
+                // Get the current player.
+                PlayerStorage player = null; 
+                if(body.master) player = FindPlayerStorage(body.master);
+
+                // Pre-check.
+                if (player != null && player.isDead && _config.ItemPickupToggle)
                 {
-                    if (player.master.GetBody() && player.master.GetBody().gameObject == body.gameObject && player.isDead && _config.ItemPickupToggle)
-                        player.master.GetBody().teamComponent.teamIndex = TeamIndex.Player; // Apparently you have to be on the player team to pick up items???
+                    // Apparently you have to be on the player team to pick up items???
+                    player.master.GetBody().teamComponent.teamIndex = TeamIndex.Player;
                 }
+
+                // Orig
                 orig(self, body);
-                foreach (PlayerStorage player in playerStorage)
+
+                // Post-fix.
+                if (player != null && player.isDead && _config.ItemPickupToggle)
                 {
-                    if (player.master.GetBody() && player.master.GetBody().gameObject == body.gameObject && player.isDead && _config.ItemPickupToggle)
-                        player.master.GetBody().teamComponent.teamIndex = (TeamIndex)_config.RespawnTeam; // Set them back for posterity.
+                    // Set them back for posterity.
+                    player.master.GetBody().teamComponent.teamIndex = (TeamIndex)_config.RespawnTeam;
+
                 }
             }
             else orig(self, body);
         }
 
-        private CharacterBody CharacterMaster_Respawn(On.RoR2.CharacterMaster.orig_Respawn orig, CharacterMaster self, Vector3 footPosition, Quaternion rotation)
+        private void WhyDoActionsDoSillySillyThings(RoR2.Orbs.ItemTransferOrb orb) { }
+
+        // Handling item grants.
+        private void Inventory_GiveItem_ItemIndex_int(On.RoR2.Inventory.orig_GiveItem_ItemIndex_int orig, Inventory self, ItemIndex itemIndex, int count)
+        {
+            // Is the item in our blacklist? (And also Refight is running.)
+            if (_config.EnableRefightilization && currItemBlacklist.Contains(itemIndex))
+            {
+                // Seeing if a valid PlayerStorage exists for this Character.
+                CharacterMaster possiblePlayer = self.GetComponent<CharacterMaster>();
+                PlayerStorage player = null;
+                if (possiblePlayer != null) player = FindPlayerStorage(possiblePlayer);
+
+                // If we can even find that this player exists and is dead, then increment their blacklisted items.
+                if (player != null && player.isDead)
+                {
+                    // Incrementing the blacklisted items.
+                    player.blacklistedInventory.itemStacks[(int)itemIndex] += count;
+
+                    // Dummy steal effect.
+                    RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(possiblePlayer.GetBody().footPosition, 
+                        possiblePlayer.inventory, itemIndex, 0, new System.Action<RoR2.Orbs.ItemTransferOrb>(WhyDoActionsDoSillySillyThings));
+
+                    string messageText = _language.ItemBlacklistWarning; // Grabbing a random revenge message.
+                    messageText = messageText.Replace("{0}", player.user.userName); // Setting 0 to be the user losing the item.
+                    messageText = messageText.Replace("{1}", ItemCatalog.itemNames[(int)itemIndex]); // Setting 1 to be the item itself.
+                    Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cStack>" + messageText }); 
+                    return;
+                }
+            }
+            
+            orig(self, itemIndex, count);
+        }
+
+        // Handling characters respawning.
+        private CharacterBody CharacterMaster_Respawn(On.RoR2.CharacterMaster.orig_Respawn orig, CharacterMaster self, Vector3 footPosition, Quaternion rotation, bool wasRevivedMidStage = false)
         {
             if (_config.EnableRefightilization)
             {
@@ -307,9 +343,10 @@ namespace Wonda
                     CleanPlayer(FindPlayerStorage(self));
                 }
             }
-            return orig(self, footPosition, rotation);
+            return orig(self, footPosition, rotation, wasRevivedMidStage);
         }
 
+        // Handling Metamorphosis.
         private GameObject CharacterMaster_PickRandomSurvivorBodyPrefab(On.RoR2.CharacterMaster.orig_PickRandomSurvivorBodyPrefab orig, Xoroshiro128Plus rng, NetworkUser networkUser, bool allowHidden)
         {
             // In-case Metamorphosis is enabled, we have to make sure that the monster is the one that respawns and not the survivor.
@@ -323,6 +360,19 @@ namespace Wonda
             return orig(rng, networkUser, allowHidden);
         }
 
+        // Handling if somebody is dead and out of lives.
+        private bool CharacterMaster_IsDeadAndOutOfLivesServer(On.RoR2.CharacterMaster.orig_IsDeadAndOutOfLivesServer orig, CharacterMaster self)
+        {
+            if(_config.EnableRefightilization)
+            {
+                PlayerStorage player = FindPlayerStorage(self); // Finding the current player.
+                if (player != null && player.isDead) // If they exist and they *are* dead, by our standards...
+                    return true; // They're dead.
+            }
+            return orig(self); // Perform the original check.
+        }
+
+        // Handling Game-Overs
         private void Run_BeginGameOver(On.RoR2.Run.orig_BeginGameOver orig, Run self, GameEndingDef gameEndingDef)
         {
             if (!(_config.EnableRefightilization && !_config.EndGameWhenEverybodyDead)) {
@@ -332,13 +382,14 @@ namespace Wonda
             }
         }
 
+        // Handling all enemies being defeated in a Simulacrum wave.
         private void InfiniteTowerRun_OnWaveAllEnemiesDefeatedServer(On.RoR2.InfiniteTowerRun.orig_OnWaveAllEnemiesDefeatedServer orig, InfiniteTowerRun self, InfiniteTowerWaveController wc)
         {
             foreach(PlayerStorage player in playerStorage)
             {
                 if (player == null)
                 {
-                    Logger.LogInfo("Player is null! Continuing.");
+                    Logger.LogDebug("Player is null! Continuing.");
                     continue;
                 }
                 if (player.isDead)
@@ -361,7 +412,7 @@ namespace Wonda
         // Adding every player into the playerStorage list so we can easily refer to them and their original prefabs.
         private void SetupPlayers(bool StageUpdate = true)
         {
-            Logger.LogInfo("Setting up players...");
+            Logger.LogDebug("Setting up players...");
             if (StageUpdate) playerStorage.Clear();
             foreach (PlayerCharacterMasterController playerCharacterMaster in PlayerCharacterMasterController.instances)
             {
@@ -391,17 +442,18 @@ namespace Wonda
                 if (playerCharacterMaster.master) newPlayer.master = playerCharacterMaster.master;
                 if (playerCharacterMaster.master.bodyPrefab) newPlayer.origPrefab = playerCharacterMaster.master.bodyPrefab;
                 if (playerCharacterMaster.master.inventory) newPlayer.inventory = new Inventory();
+                if (playerCharacterMaster.master.inventory) newPlayer.blacklistedInventory = new Inventory();
                 playerStorage.Add(newPlayer);
-                Logger.LogInfo(newPlayer.user.userName + " added to PlayerStorage!");
+                Logger.LogDebug(newPlayer.user.userName + " added to PlayerStorage!");
             }
-            Logger.LogInfo("Setting up players finished.");
+            Logger.LogDebug("Setting up players finished.");
             if (!StageUpdate) StartCoroutine(RespawnCheck(new Vector3(0, 0, 0), respawnTime));
         }
 
         // Checking for dead players, and respawning them if it seems like they're respawnable.
         IEnumerator RespawnCheck(Vector3 deathPos = new Vector3(), float waitTime = 1f)
         {
-            Logger.LogInfo("Respawn called! Waiting " + waitTime + " seconds!");
+            Logger.LogDebug("Respawn called! Waiting " + waitTime + " seconds!");
 
             yield return new WaitForSeconds(waitTime);
 
@@ -411,25 +463,25 @@ namespace Wonda
             // Wait... Yea disable functionality if the mod is disabled.
             if (!_config.EnableRefightilization)
             {
-                Logger.LogInfo("Nevermind. Mod is disabled via config.");
+                Logger.LogDebug("Nevermind. Mod is disabled via config.");
                 yield break;
             }
 
             // Gotta prevent a major issue with players respawning after a teleporter event, causing the game to be over.
             if (_config.NoRespawnsAfterTeleporter && TeleporterInteraction.instance && TeleporterInteraction.instance.isCharged)
             {
-                Logger.LogInfo("Respawning after teleporter is disabled!");
+                Logger.LogDebug("Respawning after teleporter is disabled!");
                 yield break;
             }
 
             // Aaand moon prevention.
             if (_config.DisableMoon && moonDisabled)
             {
-                Logger.LogInfo("Respawn prevented due to current stage.");
+                Logger.LogDebug("Respawn prevented due to current stage.");
                 yield break;
             }
 
-            Logger.LogInfo("Checking players...");
+            Logger.LogDebug("Checking players...");
 
             // Okay, prep a flag for if everybody has died and kill the function if PlayerStorage is null for some reason.
             bool isEverybodyDead = true;
@@ -445,7 +497,7 @@ namespace Wonda
             {
                 if (player == null)
                 {
-                    Logger.LogInfo("Player doesn't exist! Skipping...");
+                    Logger.LogDebug("Player doesn't exist! Skipping...");
                     playerStorage.Remove(player); // This was quickly spledged in and is untested. It'll probably break *everything* if a player leaves mid-game... It probably does already.
                     RespawnCheck(deathPos, waitTime);
                     yield break;
@@ -453,16 +505,7 @@ namespace Wonda
 
                 if (player.master.IsDeadAndOutOfLivesServer() && !player.isLoggedOut)
                 {
-                    Logger.LogInfo(player.user.userName + " passed spawn check!");
-
-                    // Testing to see if the player is preventing us from having a game-over. (Possible endless loop if we aren't careful?)
-                    if (player.master.preventGameOver)
-                    {
-                        Logger.LogInfo("...except " + player.user.userName + " is preventing a game over, so we'll check again in a few seconds.");
-                        isEverybodyDead = false; // Gotta respect the prevented game over.
-                        StartCoroutine(RespawnCheck(new Vector3(0, 0, 0), (waitTime + 1) * 2)); // Prepping our next check, but a lil' later in case of a loop.
-                        continue; // Skipping right over anything else in-case it's important.
-                    }
+                    Logger.LogDebug(player.user.userName + " passed spawn check!");
 
                     // Hey! This player hasn't died before!
                     if (!player.isDead)
@@ -477,15 +520,15 @@ namespace Wonda
                 }
                 else
                 {
-                    Logger.LogInfo(player.user.userName + " failed spawn check.");
+                    Logger.LogDebug(player.user.userName + " failed spawn check.");
                     if (!player.isDead) isEverybodyDead = false; // Alright, cool. We don't have to kill everybody.
                 }
             }
 
-            Logger.LogInfo("Checking players complete.");
+            Logger.LogDebug("Checking players complete.");
             if (isEverybodyDead && !(TeleporterInteraction.instance != null && TeleporterInteraction.instance.isInFinalSequence) && _config.EndGameWhenEverybodyDead)
             {
-                Logger.LogInfo("Everybody is dead. Forcibly ending the game.");
+                Logger.LogDebug("Everybody is dead. Forcibly ending the game.");
                 ResetPrefabs(); // Resetting all those prefabs so the game-end screen would be accurate.
                 Run.instance.BeginGameOver(RoR2Content.GameEndings.StandardLoss); // Woooo! Begin that game over!
             }
@@ -496,7 +539,7 @@ namespace Wonda
         // Respawning that player.
         private void RefightRespawn(CharacterMaster player, Vector3 deathPos)
         {
-            Logger.LogInfo("Attempting player respawn!");
+            Logger.LogDebug("Attempting player respawn!");
 
             // Fun fact: I pushed a build without this. This is vital to anything working and it completly slipped my mind. It helps us track how many loops we're in :).
             respawnLoops++;
@@ -511,21 +554,21 @@ namespace Wonda
             // Apparently there's an NRE that can happen within this method, so I'm prepping for that possible event.
             if (player == null)
             {
-                Logger.LogInfo("Player is null!? Aborting Respawn.");
+                Logger.LogDebug("Player is null!? Aborting Respawn.");
                 return;
             }
 
             // Also chucking out any player who isn't currently connected to the server.
             if (player.playerCharacterMasterController.networkUser == null)
             {
-                Logger.LogInfo("Player doesn't have a networkUser!? Aborting Respawn.");
+                Logger.LogDebug("Player doesn't have a networkUser!? Aborting Respawn.");
                 return;
             }
 
             // Was this player assigned an affix by us?
             if (FindPlayerStorage(player).giftedAffix)
             {
-                Logger.LogInfo("Yoinking that Affix.");
+                Logger.LogDebug("Yoinking that Affix.");
                 player.inventory.SetEquipmentIndex(FindPlayerStorage(player).previousEquipment);
                 FindPlayerStorage(player).giftedAffix = false;
             }
@@ -539,21 +582,20 @@ namespace Wonda
 
             GameObject randomMonster = tempEnemyWhitelist[Random.Range(0, tempEnemyWhitelist.Count - 1)];
 
-            Logger.LogInfo("Found body " + randomMonster.name + ".");
+            Logger.LogDebug("Found body " + randomMonster.name + ".");
 
-            // Do we have an Ancient Scepter?
-            TakeScepter(player);
-            Logger.LogInfo("Checked for Ancient Scepter.");
+            // Do we have a blacklisted item?
+            TakeBlacklistedItems(player);
 
             // Assigning the player to the selected monster prefab.
             if (player.bodyPrefab && randomMonster)
             {
                 player.bodyPrefab = randomMonster;
-                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " was assigned to " + player.bodyPrefab.name + ".");
+                Logger.LogDebug(player.playerCharacterMasterController.networkUser.userName + " was assigned to " + player.bodyPrefab.name + ".");
             }
             else
             {
-                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " has no bodyPrefab!? Retrying...");
+                Logger.LogDebug(player.playerCharacterMasterController.networkUser.userName + " has no bodyPrefab!? Retrying...");
                 RefightRespawn(player, deathPos);
                 return;
             }
@@ -583,10 +625,7 @@ namespace Wonda
 
             // Respawning that player!
             player.Respawn(GrabNearestNodePosition(newPos), Quaternion.identity);
-            Logger.LogInfo("Respawned " + player.playerCharacterMasterController.networkUser.userName + "!");
-
-            // Catching Monster Variants if the host has it disabled.
-            if(!_config.RespawnAsMonsterVariants) RemoveMonsterVariantItems(player);
+            Logger.LogDebug("Respawned " + player.playerCharacterMasterController.networkUser.userName + "!");
 
             // Stat changes to allow players to not die instantly when they get into the game.
             player.GetBody().baseMaxHealth *= _config.RespawnHealthMultiplier;
@@ -594,13 +633,13 @@ namespace Wonda
             if (player.GetBody().GetComponent<DeathRewards>()) player.GetBody().GetComponent<DeathRewards>().goldReward *= (uint)_config.RespawnMoneyMultiplier;
             player.GetBody().baseRegen = 1f;
             player.GetBody().levelRegen = 0.2f;
-            Logger.LogInfo("Applied stats.");
+            Logger.LogDebug("Applied stats.");
 
             // Let's just double-check that the player has an Interactor.
             if (!player.GetBody().GetComponent<InteractionDriver>())
             {
                 player.GetBody().gameObject.AddComponent<InteractionDriver>();
-                Logger.LogInfo("Granting an interaction driver.");
+                Logger.LogDebug("Granting an interaction driver.");
             }
 
             // Oh! And fixing up their interactor so they can reach things that are just a *little* outta reach*.
@@ -617,7 +656,7 @@ namespace Wonda
                 if (player.GetBody().isFlying)
                     interactor.maxInteractionDistance *= 1.5f;
 
-                Logger.LogInfo("Modifying interaction distance.");
+                Logger.LogDebug("Modifying interaction distance.");
             }
 
             // Grabbing all of the minions of the player and changing their team.
@@ -626,7 +665,7 @@ namespace Wonda
             // Some fun stuff to allow players to easily get back into combat.
             player.GetBody().AddTimedBuff(RoR2Content.Buffs.ArmorBoost, 15f);
             player.GetBody().AddTimedBuff(RoR2Content.Buffs.CloakSpeed, 30f);
-            Logger.LogInfo("Applied buffs.");
+            Logger.LogDebug("Applied buffs.");
 
             // And Affixes if the player is lucky.
             if (_config.RespawnAffixEnabled && (Util.CheckRoll(_config.RespawnAffixChance, player.playerCharacterMasterController.master) || RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.eliteOnlyArtifactDef)))
@@ -637,8 +676,11 @@ namespace Wonda
                 int i = Random.Range(0, currEliteWhitelist.Count - 1); // Pick a random Elite index.
                 player.inventory.SetEquipmentIndex(currEliteWhitelist[i]); // Apply that equipment.
                 FindPlayerStorage(player).giftedAffix = _config.TakeAffix; // Set a variable to take it away.
-                Logger.LogInfo("Gifted affix.");
+                Logger.LogDebug("Gifted affix.");
             }
+
+            // Oh and they can't prevent a gameover anymore.
+            player.preventGameOver = false;
 
             // Resetting the amount of loops that we've done. 
             respawnLoops = 0;
@@ -656,7 +698,7 @@ namespace Wonda
         // Making sure that players are set back to their original prefabs.
         private void ResetPrefabs()
         {
-            Logger.LogInfo("Resetting player prefabs...");
+            Logger.LogDebug("Resetting player prefabs...");
 
             // Same as always. Never know what'll cause an NRE.
             if (playerStorage == null)
@@ -670,14 +712,14 @@ namespace Wonda
             {
                 if (player == null)
                 {
-                    Logger.LogInfo("Player is null! Continuing.");
+                    Logger.LogDebug("Player is null! Continuing.");
                     continue;
                 }
                 if (player.isDead) CleanPlayer(player);
-                Logger.LogInfo(player.user.userName + "'s prefab reset.");
+                Logger.LogDebug(player.user.userName + "'s prefab reset.");
             }
             //SetupPlayers();
-            Logger.LogInfo("Reset player prefabs!");
+            Logger.LogDebug("Reset player prefabs!");
         }
 
         // Removes items from players.
@@ -695,13 +737,13 @@ namespace Wonda
             }
 
             // Refer to the function names.
-            RemoveMonsterVariantItems(player.master);
-            StartCoroutine(GiveScepterWait(player.master, 1f));
+            StartCoroutine(ReturnBlacklistedItemsWait(player.master, 1f));
 
             // Yay! They're no longer dead!
             player.isDead = false;
         }
 
+        // Changing the teams of all of a player's minions.
         private void ChangeMinionsTeam(CharacterMaster player)
         {
             if (_config.ChangeMinionsTeam)
@@ -729,7 +771,7 @@ namespace Wonda
                         {
                             minion.GetComponent<CharacterMaster>().teamIndex = player.teamIndex;
                             if (minion.GetComponent<CharacterMaster>().GetBody()) minion.GetComponent<CharacterMaster>().GetBody().teamComponent.teamIndex = player.teamIndex;
-                            Logger.LogInfo("Changed " + minion.GetComponent<CharacterMaster>().name + "'s team.");
+                            Logger.LogDebug("Changed " + minion.GetComponent<CharacterMaster>().name + "'s team.");
                         }
                     }
                 }
@@ -739,23 +781,23 @@ namespace Wonda
         // Updating our Whitelist of monsters at stage generation.
         private void UpdateStageWhitelist()
         {
-            Logger.LogInfo("Updating the stage whitelist.");
+            Logger.LogDebug("Updating the stage whitelist.");
 
             // Clearing the old stage whitelist.
             currEnemyWhitelist.Clear();
-            Logger.LogInfo("Whitelist cleared.");
+            Logger.LogDebug("Whitelist cleared.");
 
             // If we have fixed pool enabled.
             if(_config.EnableFixedPool)
             {
-                Logger.LogInfo("Fixed pool is enabled.");
+                Logger.LogDebug("Fixed pool is enabled.");
 
                 // Iterating over each enemy body in our pool.
                 foreach (var enemyBody in _config.FixedPool)
                 {
                     // Adding it to the whitelist.
                     currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab(enemyBody));
-                    Logger.LogInfo("Adding " + enemyBody + " to the currWhitelist.");
+                    Logger.LogDebug("Adding " + enemyBody + " to the currWhitelist.");
                 }
 
             // If fixed pool isn't enabled.
@@ -763,12 +805,12 @@ namespace Wonda
                 // If we have no monster choices available.
                 if (ClassicStageInfo.instance == null || ClassicStageInfo.instance.monsterSelection == null || ClassicStageInfo.instance.monsterSelection.choices == null)
                 {
-                    Logger.LogInfo("There is no available monster selection!");
+                    Logger.LogDebug("There is no available monster selection!");
 
                     // But we are in the Voidling encounter...
                     if (VoidRaidGauntletController.instance)
                     {
-                        Logger.LogInfo("Void raid detected! Forcing monster selection...");
+                        Logger.LogDebug("Void raid detected! Forcing monster selection...");
 
                         currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("NullifierBody"));
                         currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("VoidJailerBody"));
@@ -778,7 +820,7 @@ namespace Wonda
                 // If we do have monster selections available.
                 else
                 {
-                    Logger.LogInfo("Selection isn't null.");
+                    Logger.LogDebug("Selection isn't null.");
 
                     // Grabbing a reference liiist.
                     List<WeightedSelection<DirectorCard>.ChoiceInfo> list = ClassicStageInfo.instance.monsterSelection.choices.ToList();
@@ -786,7 +828,7 @@ namespace Wonda
                     // Beginning a nice lil' for loop.
                     foreach (var choice in list)
                     {
-                        Logger.LogInfo("Testing choice.");
+                        Logger.LogDebug("Testing choice.");
 
                         // First First, we check to see if choice and value are null. Never leave an NRE unturned.
                         if (choice.value == null) continue;
@@ -798,7 +840,7 @@ namespace Wonda
                         // Then, we check to see if the monster has a body.
                         GameObject currMonsterBody = BodyCatalog.FindBodyPrefab(currMonster.prefab.name.Replace("Master", "Body"));
                         if (currMonsterBody == null) continue;
-                        Logger.LogInfo("We have found " + currMonsterBody.name + ".");
+                        Logger.LogDebug("We have found " + currMonsterBody.name + ".");
 
                         // Nuking any unwanted Champions.
                         if (!(_config.AllowBosses && Run.instance.loopClearCount >= _config.BossRequiredLoopCount) && currMonsterBody.GetComponent<CharacterBody>().isChampion)
@@ -815,7 +857,7 @@ namespace Wonda
 
                         // Add that rad dude!
                         currEnemyWhitelist.Add(currMonsterBody);
-                        Logger.LogInfo("Adding " + currMonsterBody.name + " to the currWhitelist.");
+                        Logger.LogDebug("Adding " + currMonsterBody.name + " to the currWhitelist.");
                     }
                 }
             }
@@ -823,29 +865,30 @@ namespace Wonda
             // Populating the Final Bosses list.
             finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("BrotherBody"));
             finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("MiniVoidRaidCrabBodyBase"));
+            finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("FalseSonBossBody"));
 
             // Bring out the backup dudes if nothing works.
             if (currEnemyWhitelist.Count <= 0)
             {
-                Logger.LogInfo("No enemies were found, pulling out the backup enemies.");
+                Logger.LogDebug("No enemies were found, pulling out the backup enemies.");
                 // Yes I'm pulling out this again.
                 foreach (var enemyBody in _config.FixedPool)
                 {
                     // Adding it to the whitelist.
                     currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab(enemyBody));
-                    Logger.LogInfo("Adding " + enemyBody + " to the currWhitelist.");
+                    Logger.LogDebug("Adding " + enemyBody + " to the currWhitelist.");
                 }
 
                 // Okay, somebody didn't put in any backup enemies. **Now** we pull out the backup dude.
                 if (currEnemyWhitelist.Count <= 0) currEnemyWhitelist.Add(BodyCatalog.FindBodyPrefab("LemurianBody"));
             }
-            Logger.LogInfo("Done updating Whitelist.");
+            Logger.LogDebug("Done updating Whitelist.");
         }
 
         // Updating the *other* whitelist.
         private void UpdateEliteWhitelist()
         {
-            Logger.LogInfo("Updating the Elite whitelist.");
+            Logger.LogDebug("Updating the Elite whitelist.");
 
             // Checking to see if we even have a combat director in the first place.
             if(CombatDirector.instancesList == null && CombatDirector.instancesList[0] == null) return;
@@ -880,11 +923,11 @@ namespace Wonda
                         // Adding the index to our list.
                         currEliteWhitelist.Add(refDef[i].eliteTypes[v].eliteEquipmentDef.equipmentIndex);
 
-                        Logger.LogInfo("Added " + refDef[i].eliteTypes[v].eliteEquipmentDef.nameToken + " to the pool.");
+                        Logger.LogDebug("Added " + refDef[i].eliteTypes[v].eliteEquipmentDef.nameToken + " to the pool.");
                     }
                 }
             }
-            Logger.LogInfo("Done updating Whitelist.");
+            Logger.LogDebug("Done updating Whitelist.");
         }
 
         // Utility Methods
@@ -946,118 +989,78 @@ namespace Wonda
         // Code for handling other mods.
         //
 
-        // One-upping myself by having a master function that can call sub-functions.
-        private void RemoveMonsterVariantItems(CharacterMaster player)
+        private void UpdateBlacklistedItems()
         {
-            if (_varianceAPI != null) { RemoveMonsterVariantItemsAPI(player); }
-        }
+            Logger.LogDebug("Updating the Item blacklist.");
+            // Clearing our list.
+            currItemBlacklist = new List<ItemIndex>();
 
-        // Amazing code provided by Nebby. Thank you so much.
-        private void RemoveMonsterVariantItemsAPI(CharacterMaster Player)
-        {
-            CharacterBody playerBody = Player.GetBody();
-            if (!playerBody) return;
-
-            VariantHandler variantHandler = playerBody.GetComponent<VariantHandler>();
-            if (variantHandler)
+            // Going over each blacklisted item.
+            foreach(var item in _config.BlacklistedItems)
             {
-                List<VariantInfo> activeVariantInfos = variantHandler.VariantInfos.ToList();
-                foreach (VariantInfo variantInfo in activeVariantInfos)
+                // Adding each blacklisted item to the major list. 
+                ItemIndex foundItem = ItemCatalog.FindItemIndex(item);
+                if (foundItem != ItemIndex.None)
                 {
-                    if (variantInfo.variantInventory == null)
-                    {
-                        CheckForPurpleHealthBar(playerBody.inventory, variantInfo);
-                        continue;
-                    }
-                    else if (variantInfo.variantInventory.ItemInventory.Length > 0)
-                    {
-                        VariantInventoryInfo.VariantInventory[] itemInventory = variantInfo.variantInventory.ItemInventory;
-                        for (int i = 0; i < itemInventory.Length; i++)
-                        {
-                            var current = itemInventory[i];
-                            ItemDef toRemove = ItemCatalog.GetItemDef(ItemCatalog.FindItemIndex(current.itemDefName));
-                            Player.inventory.RemoveItem(toRemove, current.amount);
-                        }
-                        CheckForPurpleHealthBar(playerBody.inventory, variantInfo);
-                    }
-                }
+                    currItemBlacklist.Add(foundItem);
+                    Logger.LogDebug("Added " + foundItem + "|" + item + " to the pool.");
+                } else Logger.LogDebug("Couldn't find " + item + ".");
             }
+            Logger.LogDebug("Done updating Blacklist.");
         }
 
-        //Removes the purple healthbar if the tier is greater than common.
-        private void CheckForPurpleHealthBar(Inventory inventory, VariantInfo variantInfo)
+        private void TakeBlacklistedItems(CharacterMaster player)
         {
-            var purpleHealthBar = VarianceAPI.Assets.VAPIAssets.LoadAsset<ItemDef>("PurpleHealthbar");
-            if (variantInfo.variantTier >= VarianceAPI.VariantTier.Uncommon)
+            Logger.LogDebug("Taking blacklisted items.");
+            // Perform code to remove banned items in the player's inventory.
+            PlayerStorage playerStorage = FindPlayerStorage(player);
+
+            // Iterating over each item in the blacklist. (Would this not be performant if they blacklisted a *lot* of items?)
+            foreach(var item in currItemBlacklist)
             {
-                inventory.RemoveItem(purpleHealthBar, inventory.GetItemCount(purpleHealthBar));
+                // Bluuuh, my branchless soul doesn't want this, but it prevents excess shenanigans from happening.
+                if (player.inventory.itemStacks[(int)item] == 0) continue;
+
+                // Setting the blacklisted count to their current count.
+                playerStorage.blacklistedInventory.itemStacks[(int)item] = player.inventory.itemStacks[(int)item];
+
+                // Setting the player's stacks count to zero.
+                player.inventory.RemoveItem(item, player.inventory.itemStacks[(int)item]);
+
+                // Dummy steal effect.
+                RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(player.GetBody().footPosition,
+                    player.inventory, item, 0, new System.Action<RoR2.Orbs.ItemTransferOrb>(WhyDoActionsDoSillySillyThings));
+
+                Logger.LogDebug("Took away an item at " + item);
             }
+            Logger.LogDebug("Done checking for blacklisted items.");
         }
 
-        private void TakeScepter(CharacterMaster player)
-        {
-            if (_classicItems != null) TakeScepterCI(player);
-            if (_standaloneAncientScepter != null) TakeScepterSAS(player);
-        }
-
-        private IEnumerator GiveScepterWait(CharacterMaster player, float time)
+        private IEnumerator ReturnBlacklistedItemsWait(CharacterMaster player, float time)
         {
             yield return new WaitForSeconds(time);
-            GiveScepter(player);
+            ReturnBlacklistedItems(player);
         }
 
-        private void GiveScepter(CharacterMaster player)
+        private void ReturnBlacklistedItems(CharacterMaster player)
         {
-            if (_classicItems != null) GiveScepterCI(player);
-            if (_standaloneAncientScepter != null) GiveScepterSAS(player);
-        }
+            Logger.LogDebug("Giving blacklisted items.");
+            // Perform code to return banned items in the player's inventory.
+            PlayerStorage playerStorage = FindPlayerStorage(player);
 
-        // This one is for Classic Items. It takes the player's Scepter.
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        private void TakeScepterCI(CharacterMaster player)
-        {
-            /*if (player.inventory.GetItemCount(ThinkInvisible.ClassicItems.Scepter.instance.itemDef) > 0)
+            // Iterating over each item in the blacklist. (Would this not be performant if they blacklisted a *lot* of items?)
+            foreach (var item in currItemBlacklist)
             {
-                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " has a Scepter. Taking it.");
-                FindPlayerStorage(player).hadAncientScepter = true;
-                player.inventory.RemoveItem(ThinkInvisible.ClassicItems.Scepter.instance.itemDef);
-            }*/
-        }
+                // Bluuuh, my branchless soul doesn't want this, but it prevents excess shenanigans from happening.
+                if (playerStorage.blacklistedInventory.itemStacks[(int)item] == 0) continue;
 
-        // This one is for Classic Items. It gives the player's Scepter.
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        private void GiveScepterCI(CharacterMaster player)
-        {
-            /*if (FindPlayerStorage(player).hadAncientScepter)
-            {
-                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " had a Scepter. Returning it.");
-                player.inventory.GiveItem(ThinkInvisible.ClassicItems.Scepter.instance.itemDef);
-                FindPlayerStorage(player).hadAncientScepter = false;
-            }*/
-        }
-
-        // This one is for Standalone AS. Same as before.
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        private void TakeScepterSAS(CharacterMaster player)
-        {
-            /*if (player.inventory.GetItemCount(AncientScepter.AncientScepterItem.instance.ItemDef) > 0)
-            {
-                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " has a Scepter. Taking it.");
-                FindPlayerStorage(player).hadAncientScepter = true;
-                player.inventory.RemoveItem(AncientScepter.AncientScepterItem.instance.ItemDef);
-            }*/
-        }
-
-        // This one is for Standalone AS. Same as before.
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        private void GiveScepterSAS(CharacterMaster player)
-        {
-            /*if (FindPlayerStorage(player).hadAncientScepter)
-            {
-                Logger.LogInfo(player.playerCharacterMasterController.networkUser.userName + " had a Scepter. Returning it.");
-                player.inventory.GiveItem(AncientScepter.AncientScepterItem.instance.ItemDef);
-                FindPlayerStorage(player).hadAncientScepter = false;
-            }*/
+                // Restoring the player's inventory.
+                RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(player.GetBody().footPosition, player.inventory, item, playerStorage.blacklistedInventory.itemStacks[(int)item]);
+                // Getting rid of spare stacks.
+                playerStorage.blacklistedInventory.itemStacks[(int)item] = 0;
+                Logger.LogDebug("Gave an item at " + item);
+            }
+            Logger.LogDebug("Done checking for blacklisted items.");
         }
     }
 }

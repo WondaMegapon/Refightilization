@@ -16,7 +16,6 @@ If you ever want to mess with this mod while in single player, there are some co
 |EndGameWhenEverybodyDead|false|This will allow the game to not end after death.|
 |RespawnDelay|0.0|It's boring to wait.|
 |RespawnTeam|Player|The run would be softlocked because you can't charge the teleporter.|
-|AdditionalRespawnTime|0.0|Once again, it's *very* boring to wait.|
 |NoRespawnsAfterTeleporter|false|If you somehow die after the teleporter event finishes, you won't be able to respawn.|
 
 # Issues
@@ -39,7 +38,7 @@ Thanks to Nova and Arky for helpin' me scheme up the name for this thing.
 
 Thanks to Fantab and Loke for inspiring this project to exist. 
 
-Thanks to Cebe, Joe, JC, and PurpleKid for helping me test this mod out prior to release.
+Thanks to Cebe, Joe, Kat, and PurpleKid for helping me test this mod out prior to release.
 
 Thanks to Lux, EnderGrimm and Gaforb for providing tons of feedback to help make this mod better.
 
@@ -68,6 +67,12 @@ Regarding the 1.1.7 Update, thanks to:
 # Changelog
 
 ## 1.2.x
+
+1.2.1 - Updated to SotS. Now compatible with Seeker's Revive and Shrine of Shaping.
+Added config option for setting items that monsters aren't allowed to have.
+Removed Soft Compatibility with VarainceAPI and MonsterVariants due to internal code rot.
+Removed Soft Compatibility with AncientScepter and ClassicItems in favor of a new item blacklist for monsters.
+Removed Hard Incompatibility with TeammateRevival, due to fixes with how dead players are classified.
 
 1.2.0 - Huge compatibility overhaul! Added a RiskOfOptions config menu. Added the ability to set a fixed pool of monsters. 
 Added a config option for toggling affixes. Allowed for fallback monsters to be set if none exist. Added a config option for overriding

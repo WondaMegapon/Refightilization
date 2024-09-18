@@ -29,14 +29,13 @@ namespace Wonda
         private readonly ConfigEntry<bool> _respawnAffixEnabled;
         private readonly ConfigEntry<float> _respawnAffixChance;
         private readonly ConfigEntry<float> _additionalRespawnTime;
-        private readonly ConfigEntry<bool> _respawnAsMonsterVariants;
         private readonly ConfigEntry<bool> _noRespawnsAfterTeleporter;
         private readonly ConfigEntry<bool> _noRepeatRespawns;
 
         private readonly ConfigEntry<bool> _itemPickupToggle;
-        private readonly ConfigEntry<bool> _removeMonsterVariantItems;
         private readonly ConfigEntry<bool> _takeAffix;
         private readonly ConfigEntry<bool> _forceGrantAffix;
+        private readonly ConfigEntry<string> _blacklistedItems;
 
         private readonly ConfigEntry<bool> _murderRevive;
         private readonly ConfigEntry<float> _murderWindow;
@@ -68,14 +67,13 @@ namespace Wonda
         public bool RespawnAffixEnabled { get => _respawnAffixEnabled.Value; }
         public float RespawnAffixChance { get => _respawnAffixChance.Value; }
         public float AdditionalRespawnTime { get => _additionalRespawnTime.Value; }
-        public bool RespawnAsMonsterVariants { get => _respawnAsMonsterVariants.Value; }
         public bool NoRespawnsAfterTeleporter { get => _noRespawnsAfterTeleporter.Value; }
         public bool NoRepeatRespawns { get => _noRepeatRespawns.Value; }
 
         public bool ItemPickupToggle { get => _itemPickupToggle.Value; }
-        public bool RemoveMonsterVariantItems { get => _removeMonsterVariantItems.Value; }
         public bool TakeAffix { get => _takeAffix.Value; }
         public bool ForceGrantAffix { get => _forceGrantAffix.Value; }
+        public string[] BlacklistedItems { get => _blacklistedItems.Value.Replace(" ", "").Split(','); }
 
         public bool MurderRevive { get => _murderRevive.Value; }
         public float MurderWindow { get => _murderWindow.Value; }
@@ -115,6 +113,7 @@ namespace Wonda
             _itemPickupToggle = config.Bind("Item Settings", "ItemPickupToggle", true, "Allows monster players to pick up items off the ground. (Disabling won't work if RespawnTeam is set to Player.)");
             _takeAffix = config.Bind("Item Settings", "TakeAffix", true, "Will take away granted affixes upon respawning.");
             _forceGrantAffix = config.Bind("Item Settings", "ForceGrantAffix", false, "Will forcibly give the player an aspect, even if they have an equipment item.");
+            _blacklistedItems = config.Bind("Item Settings", "BlacklistedItems", "HealingPotion, FragileDamageBonus, LunarPrimaryReplacement, LunarSecondaryReplacement, LunarSpecialReplacement, LunarUtilityReplacement, Thorns, ExtraLife, ExtraLifeVoid, AncientScepterItem", "Will take away these items from monster players, returning them after they respawn.");
 
             _murderRevive = config.Bind("Behavior Settings", "MurderRevive", true, "Will respawn a dead player as a survivor if they kill another player.");
             _murderWindow = config.Bind("Behavior Settings", "MurderWindow", 15f, "The amount of time that a player has after damaging a player to respawn as them.");
@@ -122,9 +121,6 @@ namespace Wonda
             _disableMoon = config.Bind("Behavior Settings", "DisableMoon", true, "Prevents players from respawning in Commencement.");
             _overrideMetamorphosis = config.Bind("Behavior Settings", "OverrideMetamorphosis", true, "Allows Refightilization to override Artifact of Metamorphosis's behavior.");
             _changeMinionsTeam = config.Bind("Behavior Settings", "ChangeMinionsTeam", true, "Minions will have their team changed to match the player.");
-
-            _respawnAsMonsterVariants = config.Bind("Compatibility Settings", "RespawnAsMonsterVariants", true, "Allows players to respawn as Monster Variants.");
-            _removeMonsterVariantItems = config.Bind("Compatibility Settings", "RemoveMonsterVariantItems", true, "Will remove items given to players by Monster Variants on respawn.");
 
             _endGameWhenEverybodyDead = config.Bind("Debug", "EndGameWhenEverybodyDead", true, "Ends the round when everybody is dead. (Keep this on.)");
             _maxRespawnTries = config.Bind("Debug", "MaxRespawnTries", 5, "The maximum attempts the game will make to retry spawning a player.");
@@ -170,6 +166,7 @@ namespace Wonda
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_itemPickupToggle));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_takeAffix));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_forceGrantAffix));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.StringInputFieldOption(_blacklistedItems));
 
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_murderRevive));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_murderWindow, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 1, max = 60, increment = 1f }));
@@ -177,9 +174,6 @@ namespace Wonda
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_disableMoon));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_overrideMetamorphosis));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_changeMinionsTeam));
-
-            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_respawnAsMonsterVariants));
-            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_removeMonsterVariantItems));
 
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_endGameWhenEverybodyDead));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.IntSliderOption(_maxRespawnTries));

@@ -1,10 +1,11 @@
 ﻿{
   "name": "Refightilization",
-  "version_number": "1.2.0",
+  "version_number": "1.2.1",
   "website_url": "https://github.com/WondaMegapon/Refightilization/",
   "description": "Allows players to respawn as a monster when they die.",
   "dependencies": [
     "bbepis-BepInExPack-5.4.2113",
-    "tristanmcpherson-R2API-5.0.5"
+    "RiskofThunder-R2API_Core-5.1.2",
+    "RiskofThunder-R2API_Language-1.0.1"
   ]
 }
