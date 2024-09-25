@@ -48,6 +48,8 @@ Thanks to Shower and Infinityhero for coming up with amazing revive messages.
 
 Thanks to Cleveryt for the French localization. Thanks to Goleden for the Chinese localization.
 
+Thanks to Crickochet for writing "Fixed compatibility with Goku" on my tombstone.
+
 Regarding the 1.1.7 Update, thanks to:
 
 - Alphaca, DVRP for Korean Translations
@@ -67,6 +69,8 @@ Regarding the 1.1.7 Update, thanks to:
 # Changelog
 
 ## 1.2.x
+
+1.2.2 - Fixed compatibility with Goku.
 
 1.2.1 - Updated to SotS. Now compatible with Seeker's Revive and Shrine of Shaping.
 Added config option for setting items that monsters aren't allowed to have.

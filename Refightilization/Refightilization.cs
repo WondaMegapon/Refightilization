@@ -25,7 +25,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.2.1";
+        const string version = "1.2.2";
 
         // Config
         private RefightilizationConfig _config;
@@ -40,8 +40,7 @@ namespace Wonda
             public CharacterMaster master = null; // The character master of the player.
             public GameObject origPrefab = null; // The original surivor the player was playing as.
             public bool isDead = false; // A tracker for if the player was dead or not.
-            public Inventory inventory = null; // The inventory the player originally had.
-            public Inventory blacklistedInventory = null; // For storing any items that the player wasn't supposed to have.
+            public int[] blacklistedInventory = new int[ItemCatalog.itemCount]; // For storing any items that the player wasn't supposed to have.
             public bool giftedAffix = false; // A tracker for if the player has recieved an affix from the mod.
             public EquipmentIndex previousEquipment = EquipmentIndex.None; // The equipment the player previously had.
             public NetworkUser lastDamagedBy = null; // The network user that previously attacked this player.
@@ -201,8 +200,7 @@ namespace Wonda
                             StartCoroutine(RespawnCheck(player.master.transform.position, 3)); // Spawning in players shortly after a delay.
                         }
 
-                        player.master.inventory.CopyItemsFrom(player.inventory); // Copying the inventory.
-                        player.blacklistedInventory = new Inventory(); // Creating a blacklisted inventory, for storage.
+                        player.blacklistedInventory = new int[ItemCatalog.itemCount]; // Creating a blacklisted inventory, for storage.
 
                         break; // Getting out of this loop.
                     }
@@ -233,7 +231,6 @@ namespace Wonda
                     if (player.user.userName == user.userName)
                     {
                         CleanPlayer(player); // Cleaning this player up.
-                        player.inventory.CopyItemsFrom(user.master.inventory); // Storing all of their goodies.
                         break;
                     }
                 }
@@ -315,7 +312,7 @@ namespace Wonda
                 if (player != null && player.isDead)
                 {
                     // Incrementing the blacklisted items.
-                    player.blacklistedInventory.itemStacks[(int)itemIndex] += count;
+                    player.blacklistedInventory[(int)itemIndex] += count;
 
                     // Dummy steal effect.
                     RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(possiblePlayer.GetBody().footPosition, 
@@ -441,8 +438,7 @@ namespace Wonda
                 if (playerCharacterMaster.networkUser) newPlayer.user = playerCharacterMaster.networkUser;
                 if (playerCharacterMaster.master) newPlayer.master = playerCharacterMaster.master;
                 if (playerCharacterMaster.master.bodyPrefab) newPlayer.origPrefab = playerCharacterMaster.master.bodyPrefab;
-                if (playerCharacterMaster.master.inventory) newPlayer.inventory = new Inventory();
-                if (playerCharacterMaster.master.inventory) newPlayer.blacklistedInventory = new Inventory();
+                if (playerCharacterMaster.master.inventory) newPlayer.blacklistedInventory = new int[ItemCatalog.itemCount];
                 playerStorage.Add(newPlayer);
                 Logger.LogDebug(newPlayer.user.userName + " added to PlayerStorage!");
             }
@@ -509,10 +505,7 @@ namespace Wonda
 
                     // Hey! This player hasn't died before!
                     if (!player.isDead)
-                    {
                         player.isDead = true; // They died!
-                        player.inventory.CopyItemsFrom(player.master.inventory); // Copy all their items.
-                    }
 
                     player.master.teamIndex = _config.RespawnTeam; // Moved out here in-case config is changed mid-game.
                     respawnLoops = 0; // Setting our loops in-case something breaks in RefightRespawn.
@@ -1022,7 +1015,7 @@ namespace Wonda
                 if (player.inventory.itemStacks[(int)item] == 0) continue;
 
                 // Setting the blacklisted count to their current count.
-                playerStorage.blacklistedInventory.itemStacks[(int)item] = player.inventory.itemStacks[(int)item];
+                playerStorage.blacklistedInventory[(int)item] = player.inventory.itemStacks[(int)item];
 
                 // Setting the player's stacks count to zero.
                 player.inventory.RemoveItem(item, player.inventory.itemStacks[(int)item]);
@@ -1052,12 +1045,12 @@ namespace Wonda
             foreach (var item in currItemBlacklist)
             {
                 // Bluuuh, my branchless soul doesn't want this, but it prevents excess shenanigans from happening.
-                if (playerStorage.blacklistedInventory.itemStacks[(int)item] == 0) continue;
+                if (playerStorage.blacklistedInventory[(int)item] == 0) continue;
 
                 // Restoring the player's inventory.
-                RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(player.GetBody().footPosition, player.inventory, item, playerStorage.blacklistedInventory.itemStacks[(int)item]);
+                RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(player.GetBody().footPosition, player.inventory, item, playerStorage.blacklistedInventory[(int)item]);
                 // Getting rid of spare stacks.
-                playerStorage.blacklistedInventory.itemStacks[(int)item] = 0;
+                playerStorage.blacklistedInventory[(int)item] = 0;
                 Logger.LogDebug("Gave an item at " + item);
             }
             Logger.LogDebug("Done checking for blacklisted items.");
