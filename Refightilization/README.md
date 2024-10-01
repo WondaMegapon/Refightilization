@@ -70,6 +70,8 @@ Regarding the 1.1.7 Update, thanks to:
 
 ## 1.2.x
 
+1.2.3 - Fixed issue with dead players re-respawning.
+
 1.2.2 - Fixed compatibility with Goku.
 
 1.2.1 - Updated to SotS. Now compatible with Seeker's Revive and Shrine of Shaping.

@@ -25,7 +25,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.2.2";
+        const string version = "1.2.3";
 
         // Config
         private RefightilizationConfig _config;
@@ -499,7 +499,7 @@ namespace Wonda
                     yield break;
                 }
 
-                if (player.master.IsDeadAndOutOfLivesServer() && !player.isLoggedOut)
+                if (player.master.IsDeadAndOutOfLivesServer() && !player.isLoggedOut && (!player.master.GetBody() || (player.master.GetBody() && !player.master.GetBody().healthComponent.alive)))
                 {
                     Logger.LogDebug(player.user.userName + " passed spawn check!");
 
