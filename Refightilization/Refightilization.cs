@@ -318,7 +318,7 @@ namespace Wonda
 
                     // Dummy steal effect.
                     RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(possiblePlayer.GetBody().footPosition, 
-                        possiblePlayer.inventory, itemIndex, 0, new System.Action<RoR2.Orbs.ItemTransferOrb>(WhyDoActionsDoSillySillyThings));
+                        possiblePlayer.inventory, itemIndex, 0, 0.0f, WhyDoActionsDoSillySillyThings);
 
                     string messageText = _language.ItemBlacklistWarning; // Grabbing a random revenge message.
                     messageText = messageText.Replace("{0}", player.user.userName); // Setting 0 to be the user losing the item.
@@ -580,9 +580,6 @@ namespace Wonda
 
             Logger.LogDebug("Found body " + randomMonster.name + ".");
 
-            // Do we have a blacklisted item?
-            TakeBlacklistedItems(player);
-
             // Assigning the player to the selected monster prefab.
             if (player.bodyPrefab && randomMonster)
             {
@@ -631,22 +628,29 @@ namespace Wonda
             player.GetBody().levelRegen = 0.2f;
             Logger.LogDebug("Applied stats.");
 
+            // Do we have a blacklisted item?
+            TakeBlacklistedItems(player);
+
             // Let's just double-check that the player has an Interactor.
             if (!player.GetBody().GetComponent<InteractionDriver>())
             {
                 player.GetBody().gameObject.AddComponent<InteractionDriver>();
                 Logger.LogDebug("Granting an interaction driver.");
             }
+            Logger.LogDebug("Has interaction driver.");
 
-            // Oh! And fixing up their interactor so they can reach things that are just a *little* outta reach*.
-            if (player.GetBody().GetComponent<Interactor>())
+            // Oh! And fixing up their interactor so they can reach things that are just a *little* outta reach.
+            if (player.GetBody().GetComponent<Interactor>() && player.GetBody().modelLocator.modelTransform.GetComponent<CharacterModel>() && player.GetBody().modelLocator.modelTransform.GetComponent<CharacterModel>().mainSkinnedMeshRenderer) 
             {
                 Interactor interactor = player.GetBody().GetComponent<Interactor>();
 
                 // Getting the player's model size and using that to base the selection size off of.
+                Logger.LogDebug("Getting the model bounds.");
                 Vector3 vec = Vector3.Scale(player.GetBody().modelLocator.modelTransform.GetComponent<CharacterModel>().mainSkinnedMeshRenderer.bounds.size, player.GetBody().modelLocator.transform.localScale);
-                float var = Mathf.Max(Mathf.Max(vec.x, vec.y), vec.z);
-                interactor.maxInteractionDistance = var;
+                float _var = Mathf.Max(Mathf.Max(vec.x, vec.y), vec.z);
+
+                Logger.LogDebug("Setting interact radius.");
+                interactor.maxInteractionDistance = _var;
 
                 // Next, we give flying enemies extra distance.
                 if (player.GetBody().isFlying)
@@ -862,6 +866,7 @@ namespace Wonda
             finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("BrotherBody"));
             finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("MiniVoidRaidCrabBodyBase"));
             finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("FalseSonBossBody"));
+            finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("SolusWingBody"));
 
             // Bring out the backup dudes if nothing works.
             if (currEnemyWhitelist.Count <= 0)
@@ -1027,7 +1032,7 @@ namespace Wonda
 
                 // Dummy steal effect.
                 RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(player.GetBody().footPosition,
-                    player.inventory, item, 0, new System.Action<RoR2.Orbs.ItemTransferOrb>(WhyDoActionsDoSillySillyThings));
+                    player.inventory, item, 0, 0.0f, WhyDoActionsDoSillySillyThings);
 
                 Logger.LogDebug("Took away an item at " + item);
             }
@@ -1050,7 +1055,7 @@ namespace Wonda
             foreach (var item in currItemBlacklist)
             {
                 // Bluuuh, my branchless soul doesn't want this, but it prevents excess shenanigans from happening.
-                if (playerStorage.blacklistedInventory[(int)item] == 0 || playerStorage.blacklistedInventoryDecay[(int)item] == 0) continue;
+                if (playerStorage.blacklistedInventory[(int)item] == 0 && playerStorage.blacklistedInventoryDecay[(int)item] == 0) continue;
 
                 // Restoring the player's inventory.
                 RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(player.GetBody().footPosition, player.inventory, item, playerStorage.blacklistedInventory[(int)item], playerStorage.blacklistedInventoryDecay[(int)item]);
