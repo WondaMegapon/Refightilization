@@ -70,7 +70,7 @@ Regarding the 1.1.7 Update, thanks to:
 
 ## 1.2.x
 
-1.2.4 - Updated to AC (what took so long!!!).
+1.2.4 - Updated to AC (what took so long!!!). Adjusted item blacklist behavior. Added more monsters to the banlist.
 
 1.2.3 - Fixed issue with dead players re-respawning.
 

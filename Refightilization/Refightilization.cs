@@ -315,6 +315,7 @@ namespace Wonda
                 {
                     // Incrementing the blacklisted items.
                     player.blacklistedInventory[(int)itemIndex] += count;
+                    // TODO: Get this to work with temp items, too.
 
                     // Dummy steal effect.
                     RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(possiblePlayer.GetBody().footPosition, 
