@@ -41,6 +41,7 @@ namespace Wonda
             public GameObject origPrefab = null; // The original surivor the player was playing as.
             public bool isDead = false; // A tracker for if the player was dead or not.
             public int[] blacklistedInventory = new int[ItemCatalog.itemCount]; // For storing any items that the player wasn't supposed to have.
+            public float[] blacklistedInventoryDecay = new float[ItemCatalog.itemCount]; // Alloyed Collective means doing this in a bit of a roundabout way. TODO: Fix this when the Mushroom Dimension happens.
             public bool giftedAffix = false; // A tracker for if the player has recieved an affix from the mod.
             public EquipmentIndex previousEquipment = EquipmentIndex.None; // The equipment the player previously had.
             public NetworkUser lastDamagedBy = null; // The network user that previously attacked this player.
@@ -97,7 +98,7 @@ namespace Wonda
             On.RoR2.TeleporterInteraction.OnInteractionBegin += TeleporterInteraction_OnInteractionBegin;
             On.RoR2.GenericPickupController.AttemptGrant += GenericPickupController_AttemptGrant;
             On.RoR2.Inventory.GiveItem_ItemIndex_int += Inventory_GiveItem_ItemIndex_int;
-            On.RoR2.CharacterMaster.Respawn += CharacterMaster_Respawn;
+            On.RoR2.CharacterMaster.Respawn_Vector3_Quaternion_bool += CharacterMaster_Respawn;
             On.RoR2.CharacterMaster.PickRandomSurvivorBodyPrefab += CharacterMaster_PickRandomSurvivorBodyPrefab;
             On.RoR2.CharacterMaster.IsDeadAndOutOfLivesServer += CharacterMaster_IsDeadAndOutOfLivesServer;
             On.RoR2.Run.BeginGameOver += Run_BeginGameOver;
@@ -133,7 +134,7 @@ namespace Wonda
                 {
                     CleanPlayer(attackerStorage);
                     attackerStorage.master.RespawnExtraLife(); // Respawning the attacker with the extra life effect.
-                    attackerStorage.master.inventory.RemoveItem(RoR2Content.Items.ExtraLifeConsumed); // Immediately removing the item that the extra life effect spawns.
+                    attackerStorage.master.inventory.RemoveItemPermanent(RoR2Content.Items.ExtraLifeConsumed); // Immediately removing the item that the extra life effect spawns.
 
                     string messageText = _language.RevengeMessages[Random.Range(0, _language.RevengeMessages.Count - 1)]; // Grabbing a random revenge message.
                     messageText = messageText.Replace("{0}", attackerStorage.master.playerCharacterMasterController.networkUser.userName); // Setting 0 to be the attacker.
@@ -201,6 +202,7 @@ namespace Wonda
                         }
 
                         player.blacklistedInventory = new int[ItemCatalog.itemCount]; // Creating a blacklisted inventory, for storage.
+                        player.blacklistedInventoryDecay = new float[ItemCatalog.itemCount]; // Creating a blacklisted inventory, for temp storage.
 
                         break; // Getting out of this loop.
                     }
@@ -330,7 +332,7 @@ namespace Wonda
         }
 
         // Handling characters respawning.
-        private CharacterBody CharacterMaster_Respawn(On.RoR2.CharacterMaster.orig_Respawn orig, CharacterMaster self, Vector3 footPosition, Quaternion rotation, bool wasRevivedMidStage = false)
+        private CharacterBody CharacterMaster_Respawn(On.RoR2.CharacterMaster.orig_Respawn_Vector3_Quaternion_bool orig, CharacterMaster self, Vector3 footPosition, Quaternion rotation, bool wasRevivedMidStage = false)
         {
             if (_config.EnableRefightilization)
             {
@@ -439,6 +441,7 @@ namespace Wonda
                 if (playerCharacterMaster.master) newPlayer.master = playerCharacterMaster.master;
                 if (playerCharacterMaster.master.bodyPrefab) newPlayer.origPrefab = playerCharacterMaster.master.bodyPrefab;
                 if (playerCharacterMaster.master.inventory) newPlayer.blacklistedInventory = new int[ItemCatalog.itemCount];
+                if (playerCharacterMaster.master.inventory) newPlayer.blacklistedInventoryDecay = new float[ItemCatalog.itemCount];
                 playerStorage.Add(newPlayer);
                 Logger.LogDebug(newPlayer.user.userName + " added to PlayerStorage!");
             }
@@ -562,7 +565,7 @@ namespace Wonda
             if (FindPlayerStorage(player).giftedAffix)
             {
                 Logger.LogDebug("Yoinking that Affix.");
-                player.inventory.SetEquipmentIndex(FindPlayerStorage(player).previousEquipment);
+                player.inventory.SetEquipmentIndex(FindPlayerStorage(player).previousEquipment, true);
                 FindPlayerStorage(player).giftedAffix = false;
             }
 
@@ -667,7 +670,7 @@ namespace Wonda
 
                 if (_config.ForceGrantAffix) FindPlayerStorage(player).previousEquipment = player.inventory.GetEquipmentIndex(); // Record their current equipment if ForceGrantAffix is enabled 
                 int i = Random.Range(0, currEliteWhitelist.Count - 1); // Pick a random Elite index.
-                player.inventory.SetEquipmentIndex(currEliteWhitelist[i]); // Apply that equipment.
+                player.inventory.SetEquipmentIndex(currEliteWhitelist[i], false); // Apply that equipment.
                 FindPlayerStorage(player).giftedAffix = _config.TakeAffix; // Set a variable to take it away.
                 Logger.LogDebug("Gifted affix.");
             }
@@ -725,7 +728,7 @@ namespace Wonda
             // Taking back that affix.
             if (player.giftedAffix)
             {
-                player.master.inventory.SetEquipmentIndex(player.previousEquipment);
+                player.master.inventory.SetEquipmentIndex(player.previousEquipment, true);
                 player.giftedAffix = false;
             }
 
@@ -1012,13 +1015,15 @@ namespace Wonda
             foreach(var item in currItemBlacklist)
             {
                 // Bluuuh, my branchless soul doesn't want this, but it prevents excess shenanigans from happening.
-                if (player.inventory.itemStacks[(int)item] == 0) continue;
+                if (player.inventory.GetItemCountEffective(item) == 0) continue;
 
                 // Setting the blacklisted count to their current count.
-                playerStorage.blacklistedInventory[(int)item] = player.inventory.itemStacks[(int)item];
+                playerStorage.blacklistedInventory[(int)item] = player.inventory.GetItemCountPermanent(item);
+                playerStorage.blacklistedInventoryDecay[(int)item] = player.inventory.GetTempItemRawValue(item);
 
                 // Setting the player's stacks count to zero.
-                player.inventory.RemoveItem(item, player.inventory.itemStacks[(int)item]);
+                player.inventory.RemoveItemPermanent(item, player.inventory.GetItemCountPermanent(item));
+                player.inventory.RemoveItemTemp(item, player.inventory.GetTempItemRawValue(item));
 
                 // Dummy steal effect.
                 RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(player.GetBody().footPosition,
@@ -1045,12 +1050,13 @@ namespace Wonda
             foreach (var item in currItemBlacklist)
             {
                 // Bluuuh, my branchless soul doesn't want this, but it prevents excess shenanigans from happening.
-                if (playerStorage.blacklistedInventory[(int)item] == 0) continue;
+                if (playerStorage.blacklistedInventory[(int)item] == 0 || playerStorage.blacklistedInventoryDecay[(int)item] == 0) continue;
 
                 // Restoring the player's inventory.
-                RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(player.GetBody().footPosition, player.inventory, item, playerStorage.blacklistedInventory[(int)item]);
+                RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(player.GetBody().footPosition, player.inventory, item, playerStorage.blacklistedInventory[(int)item], playerStorage.blacklistedInventoryDecay[(int)item]);
                 // Getting rid of spare stacks.
                 playerStorage.blacklistedInventory[(int)item] = 0;
+                playerStorage.blacklistedInventoryDecay[(int)item] = 0;
                 Logger.LogDebug("Gave an item at " + item);
             }
             Logger.LogDebug("Done checking for blacklisted items.");
