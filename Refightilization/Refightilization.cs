@@ -97,7 +97,8 @@ namespace Wonda
             On.RoR2.Run.OnUserRemoved += Run_OnUserRemoved;
             On.RoR2.TeleporterInteraction.OnInteractionBegin += TeleporterInteraction_OnInteractionBegin;
             On.RoR2.GenericPickupController.AttemptGrant += GenericPickupController_AttemptGrant;
-            On.RoR2.Inventory.GiveItem_ItemIndex_int += Inventory_GiveItem_ItemIndex_int;
+            On.RoR2.Inventory.GiveItemPermanent_ItemIndex_int += Inventory_GiveItemPermanent_ItemIndex_int;
+            On.RoR2.Inventory.GiveItemTemp += Inventory_GiveItemTemp;
             On.RoR2.CharacterMaster.Respawn_Vector3_Quaternion_bool += CharacterMaster_Respawn;
             On.RoR2.CharacterMaster.PickRandomSurvivorBodyPrefab += CharacterMaster_PickRandomSurvivorBodyPrefab;
             On.RoR2.CharacterMaster.IsDeadAndOutOfLivesServer += CharacterMaster_IsDeadAndOutOfLivesServer;
@@ -133,8 +134,9 @@ namespace Wonda
                 Time.time <= victimStorage.lastDamagedTime + _config.MurderWindow) // Handling the time window
                 {
                     CleanPlayer(attackerStorage);
-                    attackerStorage.master.RespawnExtraLife(); // Respawning the attacker with the extra life effect.
-                    attackerStorage.master.inventory.RemoveItemPermanent(RoR2Content.Items.ExtraLifeConsumed); // Immediately removing the item that the extra life effect spawns.
+                    var spawnPos = attackerStorage.master.hasBody ? attackerStorage.master.GetBody().footPosition : attackerStorage.master.deathFootPosition; // STEALING!!! Stolen from DebugToolkit.
+                    if (DirectorCore.instance && attackerStorage.master.hasBody) spawnPos = Run.instance.FindSafeTeleportPositionSimplified(attackerStorage.master.GetBody().hullClassification, spawnPos);
+                    attackerStorage.master.Respawn(spawnPos, attackerStorage.master.GetBody().transform.rotation); // Respawning the attacker with the extra life effect.
 
                     string messageText = _language.RevengeMessages[Random.Range(0, _language.RevengeMessages.Count - 1)]; // Grabbing a random revenge message.
                     messageText = messageText.Replace("{0}", attackerStorage.master.playerCharacterMasterController.networkUser.userName); // Setting 0 to be the attacker.
@@ -300,10 +302,10 @@ namespace Wonda
         private void WhyDoActionsDoSillySillyThings(RoR2.Orbs.ItemTransferOrb orb) { }
 
         // Handling item grants.
-        private void Inventory_GiveItem_ItemIndex_int(On.RoR2.Inventory.orig_GiveItem_ItemIndex_int orig, Inventory self, ItemIndex itemIndex, int count)
+        private void Inventory_GiveItemPermanent_ItemIndex_int(On.RoR2.Inventory.orig_GiveItemPermanent_ItemIndex_int orig, Inventory self, ItemIndex itemIndex, int count)
         {
             // Is the item in our blacklist? (And also Refight is running.)
-            if (_config.EnableRefightilization && currItemBlacklist.Contains(itemIndex))
+            if (_config.EnableRefightilization && currItemBlacklist.Contains(itemIndex) && count > 0)
             {
                 // Seeing if a valid PlayerStorage exists for this Character.
                 CharacterMaster possiblePlayer = self.GetComponent<CharacterMaster>();
@@ -315,7 +317,38 @@ namespace Wonda
                 {
                     // Incrementing the blacklisted items.
                     player.blacklistedInventory[(int)itemIndex] += count;
-                    // TODO: Get this to work with temp items, too.
+
+                    // Dummy steal effect.
+                    RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(possiblePlayer.GetBody().footPosition, 
+                        possiblePlayer.inventory, itemIndex, 0, 0.0f, WhyDoActionsDoSillySillyThings);
+
+                    string messageText = _language.ItemBlacklistWarning; // Grabbing a random revenge message.
+                    messageText = messageText.Replace("{0}", player.user.userName); // Setting 0 to be the user losing the item.
+                    messageText = messageText.Replace("{1}", ItemCatalog.itemNames[(int)itemIndex]); // Setting 1 to be the item itself.
+                    Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<style=cStack>" + messageText }); 
+                    return;
+                }
+            }
+            
+            orig(self, itemIndex, count);
+        }
+
+        // Also temp item grants?.
+        private void Inventory_GiveItemTemp(On.RoR2.Inventory.orig_GiveItemTemp orig, Inventory self, ItemIndex itemIndex, float count)
+        {
+            // Is the item in our blacklist? (And also Refight is running.)
+            if (_config.EnableRefightilization && currItemBlacklist.Contains(itemIndex) && count > 0.0f)
+            {
+                // Seeing if a valid PlayerStorage exists for this Character.
+                CharacterMaster possiblePlayer = self.GetComponent<CharacterMaster>();
+                PlayerStorage player = null;
+                if (possiblePlayer != null) player = FindPlayerStorage(possiblePlayer);
+
+                // If we can even find that this player exists and is dead, then increment their blacklisted items.
+                if (player != null && player.isDead)
+                {
+                    // Incrementing the blacklisted items.
+                    player.blacklistedInventoryDecay[(int)itemIndex] += count;
 
                     // Dummy steal effect.
                     RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(possiblePlayer.GetBody().footPosition, 
@@ -737,11 +770,11 @@ namespace Wonda
                 player.giftedAffix = false;
             }
 
-            // Refer to the function names.
-            StartCoroutine(ReturnBlacklistedItemsWait(player.master, 1f));
-
             // Yay! They're no longer dead!
             player.isDead = false;
+
+            // Refer to the function names.
+            StartCoroutine(ReturnBlacklistedItemsWait(player.master, 1f));
         }
 
         // Changing the teams of all of a player's minions.
@@ -1056,13 +1089,13 @@ namespace Wonda
             foreach (var item in currItemBlacklist)
             {
                 // Bluuuh, my branchless soul doesn't want this, but it prevents excess shenanigans from happening.
-                if (playerStorage.blacklistedInventory[(int)item] == 0 && playerStorage.blacklistedInventoryDecay[(int)item] == 0) continue;
+                if (playerStorage.blacklistedInventory[(int)item] == 0 && playerStorage.blacklistedInventoryDecay[(int)item] == 0.0f) continue;
 
                 // Restoring the player's inventory.
                 RoR2.Orbs.ItemTransferOrb.DispatchItemTransferOrb(player.GetBody().footPosition, player.inventory, item, playerStorage.blacklistedInventory[(int)item], playerStorage.blacklistedInventoryDecay[(int)item]);
                 // Getting rid of spare stacks.
                 playerStorage.blacklistedInventory[(int)item] = 0;
-                playerStorage.blacklistedInventoryDecay[(int)item] = 0;
+                playerStorage.blacklistedInventoryDecay[(int)item] = 0.0f;
                 Logger.LogDebug("Gave an item at " + item);
             }
             Logger.LogDebug("Done checking for blacklisted items.");
