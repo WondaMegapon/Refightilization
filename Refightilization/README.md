@@ -42,7 +42,7 @@ Thanks to Cebe, Joe, Kat, and PurpleKid for helping me test this mod out prior t
 
 Thanks to Lux, EnderGrimm and Gaforb for providing tons of feedback to help make this mod better.
 
-Thanks to Nebby for giving advice on making the mod better compatible with other mods, and for helping with some errors with VarianceAPI. Also for just doing most of the work for 1.2.4.
+Thanks to Nebby for giving advice on making the mod better compatible with other mods, and for helping with some errors with VarianceAPI. Also additional thanks for just doing most of the work for 1.2.4.
 
 Thanks to Shower and Infinityhero for coming up with amazing revive messages.
 
