@@ -90,6 +90,7 @@ namespace Wonda
         private void SetupHooks()
         {
             On.RoR2.Run.Start += Run_Start;
+            On.RoR2.Run.IsRemoteOperationAllowed += Run_IsRemoteOperationAllowed;
             On.RoR2.GlobalEventManager.OnPlayerCharacterDeath += GlobalEventManager_OnPlayerCharacterDeath;
             GlobalEventManager.onServerDamageDealt += GlobalEventManager_onServerDamageDealt;
             On.RoR2.Run.OnServerSceneChanged += Run_OnServerSceneChanged;
@@ -114,6 +115,11 @@ namespace Wonda
             SetupPlayers(); // Gotta make sure players are properly stored once the run begins.
             SetupLang(); // For all of our wacky lines we need said.
             moonDisabled = false; // Moonless
+            self.AllowRemoteOperation(false); // Please get rid of remote operation. <3
+        }
+
+        private bool Run_IsRemoteOperationAllowed(On.RoR2.Run.orig_IsRemoteOperationAllowed orig, Run self) {
+            return (_config.EnableRefightilization) ? false : orig(self); // Automatically setting the RemoteOperation to false if we're running refight. (It's so incompatable.)
         }
 
         private void GlobalEventManager_OnPlayerCharacterDeath(On.RoR2.GlobalEventManager.orig_OnPlayerCharacterDeath orig, GlobalEventManager self, DamageReport damageReport, NetworkUser victimNetworkUser)
