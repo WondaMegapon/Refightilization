@@ -616,7 +616,7 @@ namespace Wonda
 
             if (_config.NoRepeatRespawns && tempEnemyWhitelist.Count > 1) tempEnemyWhitelist.Remove(tempEnemyWhitelist.Where(entity => entity.name == player.bodyPrefab.name).FirstOrDefault());
 
-            GameObject randomMonster = tempEnemyWhitelist[Random.Range(0, tempEnemyWhitelist.Count - 1)];
+            GameObject randomMonster = tempEnemyWhitelist[UnityEngine.Random.Range(0, tempEnemyWhitelist.Count - 1)];
 
             Logger.LogDebug("Found body " + randomMonster.name + ".");
 
@@ -710,7 +710,8 @@ namespace Wonda
             // And Affixes if the player is lucky.
             if (_config.RespawnAffixEnabled && (Util.CheckRoll(_config.RespawnAffixChance, player.playerCharacterMasterController.master) || RunArtifactManager.instance.IsArtifactEnabled(RoR2Content.Artifacts.eliteOnlyArtifactDef)))
             {
-                if (player.inventory.GetEquipmentIndex() != EquipmentIndex.None && !_config.ForceGrantAffix) return; // If the player already has an equipment, just skip over 'em.
+                if ((player.inventory.GetEquipmentIndex() != EquipmentIndex.None && !_config.ForceGrantAffix) || currEliteWhitelist.Count <= 0) return; // If the player already has an equipment, just skip over 'em.
+                Logger.LogDebug("Gifting affix.");
 
                 if (_config.ForceGrantAffix) FindPlayerStorage(player).previousEquipment = player.inventory.GetEquipmentIndex(); // Record their current equipment if ForceGrantAffix is enabled 
                 int i = Random.Range(0, currEliteWhitelist.Count - 1); // Pick a random Elite index.
@@ -959,7 +960,7 @@ namespace Wonda
                         if (refDef[i].eliteTypes[v].eliteEquipmentDef == null) continue;
 
                         // Checking to see if it has a valid icon (it's the only real way I can tell if it's meant to be implemented or not)
-                        if (refDef[i].eliteTypes[v].eliteEquipmentDef.pickupIconSprite == null) continue;
+                        if (refDef[i].eliteTypes[v].eliteEquipmentDef.pickupIconSpriteReference == null) continue;
 
                         // Adding the index to our list.
                         currEliteWhitelist.Add(refDef[i].eliteTypes[v].eliteEquipmentDef.equipmentIndex);
