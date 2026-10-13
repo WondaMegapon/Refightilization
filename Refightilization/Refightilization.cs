@@ -100,6 +100,7 @@ namespace Wonda
             On.RoR2.GenericPickupController.AttemptGrant += GenericPickupController_AttemptGrant;
             On.RoR2.Inventory.GiveItemPermanent_ItemIndex_int += Inventory_GiveItemPermanent_ItemIndex_int;
             On.RoR2.Inventory.GiveItemTemp += Inventory_GiveItemTemp;
+            On.RoR2.InventorySafekeepController.SafekeepInventory += InventorySafekeepController_SafekeepInventory;
             On.RoR2.CharacterMaster.Respawn_Vector3_Quaternion_bool += CharacterMaster_Respawn;
             On.RoR2.CharacterMaster.PickRandomSurvivorBodyPrefab += CharacterMaster_PickRandomSurvivorBodyPrefab;
             On.RoR2.CharacterMaster.IsDeadAndOutOfLivesServer += CharacterMaster_IsDeadAndOutOfLivesServer;
@@ -369,6 +370,16 @@ namespace Wonda
             }
             
             orig(self, itemIndex, count);
+        }
+
+        // TODO: This... should probably be replaced? Like fully.
+        private void InventorySafekeepController_SafekeepInventory(On.RoR2.InventorySafekeepController.orig_SafekeepInventory orig, InventorySafekeepController self, CharacterMaster master) {
+            PlayerStorage player = FindPlayerStorage(master); // Let's see if we have a player.
+            if (player != null && player.isDead) player.master.teamIndex = TeamIndex.Player; // You're being put back on the player team.
+            orig(self, master);
+            // BUG: So. There is a huge edge case that setting the player back will prevent other things that may happen to the player.
+            // We are going to assume that if you're keeping items, Players are supposed to be players.
+            // if (player != null && player.isDead) player.master.teamIndex = _config.RespawnTeam; // And go back to where you were.
         }
 
         // Handling characters respawning.
