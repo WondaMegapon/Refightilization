@@ -99,14 +99,14 @@ namespace Wonda
             _enableFixedPool = config.Bind("Monster Categories", "EnableFixedPool", false, "Forces players to respawn from a pre-defined list of monsters, instead of the current stage's monsters.");
             _fixedPool = config.Bind("Monster Categories", "FixedPool", "LemurianBody", "Provides a fixed list of monsters that the player could spawn as with EnableFixedPool enabled. This list will also be used if there are no available monsters to spawn as.");
 
-            _respawnDelay = config.Bind("Respawn Settings", "RespawnDelay", 5f, "Sets the delay until the player can respawn.");
+            _respawnDelay = config.Bind("Respawn Settings", "RespawnDelay", 4f, "Sets the delay until the player can respawn.");
             _respawnTeam = config.Bind("Respawn Settings", "RespawnTeam", RoR2.TeamIndex.Neutral, "Sets the team of the respawned players.");
             _respawnHealthMultiplier = config.Bind("Respawn Settings", "RespawnHealthMultiplier", 1.1f, "Multiplies the health a player spawns with.");
             _respawnDamageMultiplier = config.Bind("Respawn Settings", "RespawnDamageMultiplier", 5f, "Multiplies the damage a player spawns with.");
             _respawnMoneyMultiplier = config.Bind("Respawn Settings", "RespawnMoneyMultiplier", 1.1f, "Multiplies the money rewarded for killing a player.");
             _respawnAffixEnabled = config.Bind("Respawn Settings", "RespawnAffixEnabled", true, "Allows players to spawn with affixes if they have an empty equipment slot.");
-            _respawnAffixChance = config.Bind("Respawn Settings", "RespawnAffixChance", 60f, "Sets the chance that a respawned player will have an affix.");
-            _additionalRespawnTime = config.Bind("Respawn Settings", "AdditionalRespawnTime", 0.2f, "Sets how much respawn time will increase per player death. This will effect everyone.");
+            _respawnAffixChance = config.Bind("Respawn Settings", "RespawnAffixChance", 40f, "Sets the chance that a respawned player will have an affix.");
+            _additionalRespawnTime = config.Bind("Respawn Settings", "AdditionalRespawnTime", 0.05f, "Sets how much respawn time will increase per player death. This will effect everyone.");
             _noRespawnsAfterTeleporter = config.Bind("Respawn Settings", "NoRespawnsAfterTeleporter", true, "Disables respawning after the Teleporter event concludes.");
             _noRepeatRespawns = config.Bind("Respawn Settings", "NoRepeatRespawns", true, "Will attempt to prevent the player from respawning as the same monster twice in a row.");
 

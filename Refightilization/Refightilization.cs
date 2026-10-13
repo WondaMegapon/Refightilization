@@ -25,7 +25,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.2.3";
+        const string version = "1.2.5";
 
         // Config
         private RefightilizationConfig _config;
@@ -623,7 +623,7 @@ namespace Wonda
             // Another optimization, to prevent the game from looping over several repeated monsters.
             List<GameObject> tempEnemyWhitelist = currEnemyWhitelist;
             if (Util.CheckRoll(5f, player.playerCharacterMasterController.master) && currSpecialEnemyWhitelist.Count >= 1) tempEnemyWhitelist = new List<GameObject>(currSpecialEnemyWhitelist);
-            if (Util.CheckRoll(0.1f, player.playerCharacterMasterController.master) && finalBossWhitelist.Count >= 1) tempEnemyWhitelist = new List<GameObject>(finalBossWhitelist);
+            if (Util.CheckRoll(0.15f, player.playerCharacterMasterController.master) && finalBossWhitelist.Count >= 1) tempEnemyWhitelist = new List<GameObject>(finalBossWhitelist);
 
             if (_config.NoRepeatRespawns && tempEnemyWhitelist.Count > 1) tempEnemyWhitelist.Remove(tempEnemyWhitelist.Where(entity => entity.name == player.bodyPrefab.name).FirstOrDefault());
 
@@ -919,6 +919,8 @@ namespace Wonda
             finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("MiniVoidRaidCrabBodyBase"));
             finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("FalseSonBossBody"));
             finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("SolusWingBody"));
+            finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("LilReaperBody"));
+            finalBossWhitelist.Add(BodyCatalog.FindBodyPrefab("ProvDesperationBody"));
 
             // Bring out the backup dudes if nothing works.
             if (currEnemyWhitelist.Count <= 0)

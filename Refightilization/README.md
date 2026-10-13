@@ -22,19 +22,9 @@ If you ever want to mess with this mod while in single player, there are some co
 
 Issues are tracked on the [Github](https://github.com/WondaMegapon/Refightilization/issues). Feel free to leave any suggestions there as well.
 
-# Translation
-
-Come help get Refight translated to other languages! The more, the merrier.
-
-[![Crowdin](https://badges.crowdin.net/refightilization-risk-of-rain/localized.svg)](https://crowdin.com/project/refightilization-risk-of-rain)
-
-# Contact
-
-The [Github](https://github.com/WondaMegapon/Refightilization/issues) is the best place to leave any issues or suggestions. However, if you have any general feedback, feel free to message me on Discord. You can find me at `Wonda#2183` in the modding server.
-
 # Credits
 
-Thanks to Nova and Arky for helpin' me scheme up the name for this thing.
+Thanks to Nova and Jiggy for helpin' me scheme up the name for this thing.
 
 Thanks to Fantab and Loke for inspiring this project to exist. 
 
@@ -69,6 +59,8 @@ Regarding the 1.1.7 Update, thanks to:
 # Changelog
 
 ## 1.2.x
+
+1.2.5 - Updated to HC. Remote Operation is now blocked with Refight enabled. Affixes work again. Minor default config tweaks.
 
 1.2.4 - Updated to AC (what took so long!!!). Adjusted item blacklist behavior. Added more monsters to the banlist.
 

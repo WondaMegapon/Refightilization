@@ -39,10 +39,13 @@
       "Yo {0}, you're a {1} now. Ya' welcome.",
       "{0} just caught a wicked case of the {1}.",
       "{0} choked. {1} croaked.",
-      "The risk {1} took was calculated, but man they were bad at {0}.",
+      "The risk {1} took was calculated, but they were bad at {0}.",
       "{0} has become the very thing they sought to destroy: {1}.",
       "There's now a suspiciously {0}-shaped lump in {1}'s throat.",
-      "Goodbye {0}. Hello {1}."
+      "Goodbye {0}. Hello {1}.",
+      "{0} has been broken upon the {1}.",
+      "Don't worry {0}. Death is only the beginning.",
+      "The {1}'s are now infinite."
     ],
     "revengeMessages": [
       "{0} has killed {1}! They will live again!",
@@ -80,7 +83,8 @@
       "{1} fell into the Beetle Guard enclosure. {0} only watched.",
       "{1} didn't like Wilkins Coffee. {0} took care of that.",
       "{1} failed to make {0} a cobblestone generator.",
-      "{0} wrote a callout post. {1} locked all of their accounts."
+      "{0} wrote a callout post. {1} locked all of their accounts.",
+      "{1} did not come to serve, but to be served by {0}."
     ],
     "itemBlacklistWarning": "{0}'s {1} will be returned, later."
   },
