@@ -3,8 +3,9 @@
 
 Allows players to respawn as a monster when they die. Highly configurable. Only the server host needs the mod.
 
-# Video
+# Videos
 
+[![Shorts Trailer](https://img.youtube.com/vi/uuEbxX-CRcw/0.jpg)](https://www.youtube.com/shorts/uuEbxX-CRcw)
 [![Youtube Teaser](https://img.youtube.com/vi/4BdSJ4V8CPI/0.jpg)](https://www.youtube.com/watch?v=4BdSJ4V8CPI)
 
 # Configuring for Single Player
