@@ -1,6 +1,6 @@
 ﻿{
   "name": "Refightilization",
-  "version_number": "1.2.5",
+  "version_number": "1.2.6",
   "website_url": "https://github.com/WondaMegapon/Refightilization/",
   "description": "Allows players to respawn as a monster when they die.",
   "dependencies": [

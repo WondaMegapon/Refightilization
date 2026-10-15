@@ -61,6 +61,8 @@ Regarding the 1.1.7 Update, thanks to:
 
 ## 1.2.x
 
+1.2.6 - Added config option for disabling purchases.
+
 1.2.5 - Updated to HC. Remote Operation is now blocked with Refight enabled. Affixes work again. Minor default config tweaks.
 
 1.2.4 - Updated to AC (what took so long!!!). Adjusted item blacklist behavior. Added more monsters to the banlist.

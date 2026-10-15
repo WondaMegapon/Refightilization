@@ -41,6 +41,7 @@ namespace Wonda
         private readonly ConfigEntry<float> _murderWindow;
         private readonly ConfigEntry<bool> _announceRespawns;
         private readonly ConfigEntry<bool> _disableMoon;
+        private readonly ConfigEntry<bool> _enablePurchases;
         private readonly ConfigEntry<bool> _overrideMetamorphosis;
         private readonly ConfigEntry<bool> _changeMinionsTeam;
 
@@ -79,6 +80,7 @@ namespace Wonda
         public float MurderWindow { get => _murderWindow.Value; }
         public bool AnnounceRespawns { get => _announceRespawns.Value; }
         public bool DisableMoon { get => _disableMoon.Value; }
+        public bool EnablePurchases { get => _enablePurchases.Value; }
         public bool OverrideMetamorphosis { get => _overrideMetamorphosis.Value; }
         public bool ChangeMinionsTeam { get => _changeMinionsTeam.Value; }
 
@@ -119,6 +121,7 @@ namespace Wonda
             _murderWindow = config.Bind("Behavior Settings", "MurderWindow", 15f, "The amount of time that a player has after damaging a player to respawn as them.");
             _announceRespawns = config.Bind("Behavior Settings", "AnnounceRespawns", true, "Will announce a player respawning in the chat.");
             _disableMoon = config.Bind("Behavior Settings", "DisableMoon", true, "Prevents players from respawning in Commencement.");
+            _enablePurchases = config.Bind("Behavior Settings", "EnablePurchases", true, "Allows players to still buy items.");
             _overrideMetamorphosis = config.Bind("Behavior Settings", "OverrideMetamorphosis", true, "Allows Refightilization to override Artifact of Metamorphosis's behavior.");
             _changeMinionsTeam = config.Bind("Behavior Settings", "ChangeMinionsTeam", true, "Minions will have their team changed to match the player.");
 
@@ -172,6 +175,7 @@ namespace Wonda
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_murderWindow, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 1, max = 60, increment = 1f }));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_announceRespawns));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_disableMoon));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_enablePurchases));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_overrideMetamorphosis));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_changeMinionsTeam));
 

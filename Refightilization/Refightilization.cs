@@ -25,7 +25,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.2.5";
+        const string version = "1.2.6";
 
         // Config
         private RefightilizationConfig _config;
@@ -97,6 +97,7 @@ namespace Wonda
             On.RoR2.Run.OnUserAdded += Run_OnUserAdded;
             On.RoR2.Run.OnUserRemoved += Run_OnUserRemoved;
             On.RoR2.TeleporterInteraction.OnInteractionBegin += TeleporterInteraction_OnInteractionBegin;
+            On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
             On.RoR2.GenericPickupController.AttemptGrant += GenericPickupController_AttemptGrant;
             On.RoR2.Inventory.GiveItemPermanent_ItemIndex_int += Inventory_GiveItemPermanent_ItemIndex_int;
             On.RoR2.Inventory.GiveItemTemp += Inventory_GiveItemTemp;
@@ -270,6 +271,19 @@ namespace Wonda
                 {
                     if (self.isCharged) StopCoroutine(RespawnCheck());
                     if (player.master != null && player.master.GetBody() != null && player.master.GetBody().gameObject == activator.gameObject && player.isDead && player.master.teamIndex != TeamIndex.Player && playerStorage.Count > 1) return; 
+                    // If there's multiple players, then dead ones won't be able to activate the teleporter.
+                }
+            }
+            orig(self, activator);
+        }
+
+        private void PurchaseInteraction_OnInteractionBegin(On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig, PurchaseInteraction self, Interactor activator)
+        {
+            if (_config.EnableRefightilization && !_config.EnablePurchases)
+            {
+                foreach (PlayerStorage player in playerStorage)
+                {
+                    if (player.master != null && player.master.GetBody() != null && player.master.GetBody().gameObject == activator.gameObject && player.isDead) return; 
                     // If there's multiple players, then dead ones won't be able to activate the teleporter.
                 }
             }
