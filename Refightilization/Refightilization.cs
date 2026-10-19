@@ -696,26 +696,6 @@ namespace Wonda
             }
             Logger.LogDebug("Has interaction driver.");
 
-            // Oh! And fixing up their interactor so they can reach things that are just a *little* outta reach.
-            if (player.GetBody().GetComponent<Interactor>() && player.GetBody().modelLocator.modelTransform.GetComponent<CharacterModel>() && player.GetBody().modelLocator.modelTransform.GetComponent<CharacterModel>().mainSkinnedMeshRenderer) 
-            {
-                Interactor interactor = player.GetBody().GetComponent<Interactor>();
-
-                // Getting the player's model size and using that to base the selection size off of.
-                Logger.LogDebug("Getting the model bounds.");
-                Vector3 vec = Vector3.Scale(player.GetBody().modelLocator.modelTransform.GetComponent<CharacterModel>().mainSkinnedMeshRenderer.bounds.size, player.GetBody().modelLocator.transform.localScale);
-                float _var = Mathf.Max(Mathf.Max(vec.x, vec.y), vec.z);
-
-                Logger.LogDebug("Setting interact radius.");
-                interactor.maxInteractionDistance = _var;
-
-                // Next, we give flying enemies extra distance.
-                if (player.GetBody().isFlying)
-                    interactor.maxInteractionDistance *= 1.5f;
-
-                Logger.LogDebug("Modifying interaction distance.");
-            }
-
             // Grabbing all of the minions of the player and changing their team.
             ChangeMinionsTeam(player);
 

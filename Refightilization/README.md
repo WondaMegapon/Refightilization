@@ -41,6 +41,8 @@ Thanks to Cleveryt for the French localization. Thanks to Goleden for the Chines
 
 Thanks to Crickochet for writing "Fixed compatibility with Goku" on my tombstone.
 
+Thanks to Alice for helping me realize that the stat change sysetms do not work.
+
 Regarding the 1.1.7 Update, thanks to:
 
 - Alphaca, DVRP for Korean Translations
@@ -61,7 +63,7 @@ Regarding the 1.1.7 Update, thanks to:
 
 ## 1.2.x
 
-1.2.7 - Replaced buffs with better fits.
+1.2.7 - Replaced buffs with better fits. Getting rid of the stat configs due to instability.
 
 1.2.6 - Added config option for disabling purchases.
 
