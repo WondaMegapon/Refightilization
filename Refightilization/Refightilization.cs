@@ -685,14 +685,6 @@ namespace Wonda
             player.Respawn(GrabNearestNodePosition(newPos), Quaternion.identity);
             Logger.LogDebug("Respawned " + player.playerCharacterMasterController.networkUser.userName + "!");
 
-            // Stat changes to allow players to not die instantly when they get into the game.
-            player.GetBody().baseMaxHealth *= _config.RespawnHealthMultiplier;
-            player.GetBody().baseDamage *= _config.RespawnDamageMultiplier;
-            if (player.GetBody().GetComponent<DeathRewards>()) player.GetBody().GetComponent<DeathRewards>().goldReward *= (uint)_config.RespawnMoneyMultiplier;
-            player.GetBody().baseRegen = 1f;
-            player.GetBody().levelRegen = 0.2f;
-            Logger.LogDebug("Applied stats.");
-
             // Do we have a blacklisted item?
             TakeBlacklistedItems(player);
 
@@ -729,7 +721,7 @@ namespace Wonda
 
             // Some fun stuff to allow players to easily get back into combat.
             player.GetBody().AddTimedBuff(RoR2Content.Buffs.Immune, 5f); // We want a brief amount of immunity.
-            player.GetBody().AddUnmanagedBuff(RoR2Content.Buffs.Brutal, 1); // Turns out they added a really good stat buff for monsters! This is literally what we need.
+            player.GetBody().AddUnmanagedBuff(RoR2Content.Buffs.TonicBuff, 1); // Ehehehe. It fits the vibe a bit. 
             Logger.LogDebug("Applied buffs.");
 
             // And Affixes if the player is lucky.

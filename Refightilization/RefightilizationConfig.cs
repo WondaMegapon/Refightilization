@@ -23,9 +23,6 @@ namespace Wonda
 
         private readonly ConfigEntry<float> _respawnDelay;
         private readonly ConfigEntry<RoR2.TeamIndex> _respawnTeam;
-        private readonly ConfigEntry<float> _respawnHealthMultiplier;
-        private readonly ConfigEntry<float> _respawnDamageMultiplier;
-        private readonly ConfigEntry<float> _respawnMoneyMultiplier;
         private readonly ConfigEntry<bool> _respawnAffixEnabled;
         private readonly ConfigEntry<float> _respawnAffixChance;
         private readonly ConfigEntry<float> _additionalRespawnTime;
@@ -62,9 +59,6 @@ namespace Wonda
 
         public float RespawnDelay { get => _respawnDelay.Value; }
         public RoR2.TeamIndex RespawnTeam { get => _respawnTeam.Value; }
-        public float RespawnHealthMultiplier { get => _respawnHealthMultiplier.Value; }
-        public float RespawnDamageMultiplier { get => _respawnDamageMultiplier.Value; }
-        public float RespawnMoneyMultiplier { get => _respawnMoneyMultiplier.Value; }
         public bool RespawnAffixEnabled { get => _respawnAffixEnabled.Value; }
         public float RespawnAffixChance { get => _respawnAffixChance.Value; }
         public float AdditionalRespawnTime { get => _additionalRespawnTime.Value; }
@@ -103,9 +97,6 @@ namespace Wonda
 
             _respawnDelay = config.Bind("Respawn Settings", "RespawnDelay", 4f, "Sets the delay until the player can respawn.");
             _respawnTeam = config.Bind("Respawn Settings", "RespawnTeam", RoR2.TeamIndex.Neutral, "Sets the team of the respawned players.");
-            _respawnHealthMultiplier = config.Bind("Respawn Settings", "RespawnHealthMultiplier", 1.1f, "Multiplies the health a player spawns with.");
-            _respawnDamageMultiplier = config.Bind("Respawn Settings", "RespawnDamageMultiplier", 5f, "Multiplies the damage a player spawns with.");
-            _respawnMoneyMultiplier = config.Bind("Respawn Settings", "RespawnMoneyMultiplier", 1.1f, "Multiplies the money rewarded for killing a player.");
             _respawnAffixEnabled = config.Bind("Respawn Settings", "RespawnAffixEnabled", true, "Allows players to spawn with affixes if they have an empty equipment slot.");
             _respawnAffixChance = config.Bind("Respawn Settings", "RespawnAffixChance", 40f, "Sets the chance that a respawned player will have an affix.");
             _additionalRespawnTime = config.Bind("Respawn Settings", "AdditionalRespawnTime", 0.05f, "Sets how much respawn time will increase per player death. This will effect everyone.");
@@ -157,9 +148,6 @@ namespace Wonda
 
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_respawnDelay, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 60, increment = 1f } ));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.ChoiceOption(_respawnTeam));
-            ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_respawnHealthMultiplier, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 2, increment = 0.1f }));
-            ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_respawnDamageMultiplier, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 10, increment = 0.2f }));
-            ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_respawnMoneyMultiplier, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 2, increment = 0.1f }));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_respawnAffixEnabled));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.SliderOption(_respawnAffixChance));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StepSliderOption(_additionalRespawnTime, new RiskOfOptions.OptionConfigs.StepSliderConfig() { min = 0, max = 2, increment = 0.1f }));
