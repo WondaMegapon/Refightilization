@@ -25,7 +25,7 @@ namespace Wonda
         // Cool info B)
         const string guid = "com.Wonda.Refightilization";
         const string modName = "Refightilization";
-        const string version = "1.2.6";
+        const string version = "1.2.7";
 
         // Config
         private RefightilizationConfig _config;
@@ -728,8 +728,8 @@ namespace Wonda
             ChangeMinionsTeam(player);
 
             // Some fun stuff to allow players to easily get back into combat.
-            player.GetBody().AddTimedBuff(RoR2Content.Buffs.ArmorBoost, 15f);
-            player.GetBody().AddTimedBuff(RoR2Content.Buffs.CloakSpeed, 30f);
+            player.GetBody().AddTimedBuff(RoR2Content.Buffs.Immune, 5f); // We want a brief amount of immunity.
+            player.GetBody().AddUnmanagedBuff(RoR2Content.Buffs.Brutal, 1); // Turns out they added a really good stat buff for monsters! This is literally what we need.
             Logger.LogDebug("Applied buffs.");
 
             // And Affixes if the player is lucky.
