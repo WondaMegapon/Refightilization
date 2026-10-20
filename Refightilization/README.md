@@ -63,7 +63,7 @@ Regarding the 1.1.7 Update, thanks to:
 
 ## 1.2.x
 
-1.2.7 - Replaced buffs with better fits. Getting rid of the stat configs due to instability.
+1.2.7 - Replaced buffs with better fits. Getting rid of the stat configs due to instability. Added config to disable equipment (enabled by default).
 
 1.2.6 - Added config option for disabling purchases.
 

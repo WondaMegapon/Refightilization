@@ -712,7 +712,7 @@ namespace Wonda
             // Some fun stuff to allow players to easily get back into combat.
             player.GetBody().AddTimedBuff(RoR2Content.Buffs.Immune, 5f); // We want a brief amount of immunity.
             player.GetBody().AddUnmanagedBuff(DLC3Content.Buffs.TrashToTreasureGreen, 2); // This is the only one that grants pure regen? 
-            player.GetBody().AddUnmanagedBuff(DLC4Content.Buffs.Brutal, 2); // Ehehehe. It fits the vibe a bit. 
+            player.GetBody().AddUnmanagedBuff(DLC4Content.Buffs.Brutal, 1); // Ehehehe. It fits the vibe a bit. 
             Logger.LogDebug("Applied buffs.");
 
             // And Affixes if the player is lucky.
