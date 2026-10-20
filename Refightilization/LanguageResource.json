@@ -45,7 +45,11 @@
       "Goodbye {0}. Hello {1}.",
       "{0} has been broken upon the {1}.",
       "Don't worry {0}. Death is only the beginning.",
-      "The {1}'s are now infinite."
+      "The {1}'s are now infinite.",
+      "{0} has flipped to a {1}.",
+      "{0} has changed their mind.",
+      "{0} fell into the {1} at Taco Bell.",
+      "{0} is sorry that they kept a {1} in waiting."
     ],
     "revengeMessages": [
       "{0} has killed {1}! They will live again!",
@@ -84,7 +88,15 @@
       "{1} didn't like Wilkins Coffee. {0} took care of that.",
       "{1} failed to make {0} a cobblestone generator.",
       "{0} wrote a callout post. {1} locked all of their accounts.",
-      "{1} did not come to serve, but to be served by {0}."
+      "{1} did not come to serve, but to be served by {0}.",
+      "{0} has dominated {1}.",
+      "Thanks to {0}, {1} has become none.",
+      "{1} didn't make it, despite {0}'s directions.",
+      "{1} texted {0}, \"I lived.\"",
+      "{1} cannot fathom the spin of the steel {0}.",
+      "{0} casted a spell they didn't know onto {1}.",
+      "{0} proceeded to fly away from this town, and drown in the lake with {1}.",
+      "Stupid {1}! You made {0} look bad!"
     ],
     "itemBlacklistWarning": "{0}'s {1} will be returned, later."
   },
