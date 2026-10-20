@@ -638,12 +638,12 @@ namespace Wonda
             }
 
             // Was this player assigned an affix by us?
-            if (FindPlayerStorage(player).giftedAffix)
+            if (FindPlayerStorage(player).giftedAffix && currEliteWhitelist.Contains(player.inventory.GetEquipmentIndex()))
             {
                 Logger.LogDebug("Yoinking that Affix.");
-                player.inventory.SetEquipmentIndex(FindPlayerStorage(player).previousEquipment, true);
-                FindPlayerStorage(player).giftedAffix = false;
+                player.inventory.SetEquipmentIndex(FindPlayerStorage(player).previousEquipment, true); // Oops! Gone!
             }
+            FindPlayerStorage(player).giftedAffix = false; // And just setting this to false, no matter the case.
 
             // Another optimization, to prevent the game from looping over several repeated monsters.
             List<GameObject> tempEnemyWhitelist = currEnemyWhitelist;
