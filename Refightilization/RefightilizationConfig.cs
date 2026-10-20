@@ -30,6 +30,7 @@ namespace Wonda
         private readonly ConfigEntry<bool> _noRepeatRespawns;
 
         private readonly ConfigEntry<bool> _itemPickupToggle;
+        private readonly ConfigEntry<bool> _equipmentDisabled;
         private readonly ConfigEntry<bool> _takeAffix;
         private readonly ConfigEntry<bool> _forceGrantAffix;
         private readonly ConfigEntry<string> _blacklistedItems;
@@ -66,6 +67,7 @@ namespace Wonda
         public bool NoRepeatRespawns { get => _noRepeatRespawns.Value; }
 
         public bool ItemPickupToggle { get => _itemPickupToggle.Value; }
+        public bool EquipmentDisabled { get => _equipmentDisabled.Value; }
         public bool TakeAffix { get => _takeAffix.Value; }
         public bool ForceGrantAffix { get => _forceGrantAffix.Value; }
         public string[] BlacklistedItems { get => _blacklistedItems.Value.Replace(" ", "").Split(','); }
@@ -104,6 +106,7 @@ namespace Wonda
             _noRepeatRespawns = config.Bind("Respawn Settings", "NoRepeatRespawns", true, "Will attempt to prevent the player from respawning as the same monster twice in a row.");
 
             _itemPickupToggle = config.Bind("Item Settings", "ItemPickupToggle", true, "Allows monster players to pick up items off the ground. (Disabling won't work if RespawnTeam is set to Player.)");
+            _equipmentDisabled = config.Bind("Item Settings", "EquipmentDisabled", true, "Prevents players from using their equipment (if they had one.)");
             _takeAffix = config.Bind("Item Settings", "TakeAffix", true, "Will take away granted affixes upon respawning.");
             _forceGrantAffix = config.Bind("Item Settings", "ForceGrantAffix", false, "Will forcibly give the player an aspect, even if they have an equipment item.");
             _blacklistedItems = config.Bind("Item Settings", "BlacklistedItems", "HealingPotion, FragileDamageBonus, LunarPrimaryReplacement, LunarSecondaryReplacement, LunarSpecialReplacement, LunarUtilityReplacement, Thorns, ExtraLife, ExtraLifeVoid, AncientScepterItem", "Will take away these items from monster players, returning them after they respawn.");
@@ -155,6 +158,7 @@ namespace Wonda
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_noRepeatRespawns));
 
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_itemPickupToggle));
+            ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_equipmentDisabled));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_takeAffix));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.CheckBoxOption(_forceGrantAffix));
             ModSettingsManager.AddOption(new RiskOfOptions.Options.StringInputFieldOption(_blacklistedItems));

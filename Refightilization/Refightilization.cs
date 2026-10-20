@@ -103,6 +103,7 @@ namespace Wonda
             On.RoR2.Inventory.GiveItemTemp += Inventory_GiveItemTemp;
             On.RoR2.InventorySafekeepController.SafekeepInventory += InventorySafekeepController_SafekeepInventory;
             On.RoR2.CharacterMaster.Respawn_Vector3_Quaternion_bool += CharacterMaster_Respawn;
+            On.RoR2.CharacterMaster.OnBodyStart += CharacterMaster_OnBodyStart;
             On.RoR2.CharacterMaster.PickRandomSurvivorBodyPrefab += CharacterMaster_PickRandomSurvivorBodyPrefab;
             On.RoR2.CharacterMaster.IsDeadAndOutOfLivesServer += CharacterMaster_IsDeadAndOutOfLivesServer;
             On.RoR2.Run.BeginGameOver += Run_BeginGameOver;
@@ -408,6 +409,14 @@ namespace Wonda
                 }
             }
             return orig(self, footPosition, rotation, wasRevivedMidStage);
+        }
+
+        private void CharacterMaster_OnBodyStart(On.RoR2.CharacterMaster.orig_OnBodyStart orig, CharacterMaster self, CharacterBody body) {
+            orig(self, body);
+            if (_config.EnableRefightilization && _config.EquipmentDisabled) {
+                PlayerStorage player = FindPlayerStorage(self);
+                if (player != null && player.isDead) self.inventory.SetEquipmentDisabled(true); // Let's get rid of dead player equpiment.
+            }
         }
 
         // Handling Metamorphosis.
@@ -768,7 +777,7 @@ namespace Wonda
             ChangeMinionsTeam(player.master);
 
             // Taking back that affix.
-            if (player.giftedAffix)
+            if (player.giftedAffix && currEliteWhitelist.Contains(player.master.inventory.GetEquipmentIndex()))
             {
                 player.master.inventory.SetEquipmentIndex(player.previousEquipment, true);
                 player.giftedAffix = false;
