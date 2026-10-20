@@ -389,8 +389,10 @@ namespace Wonda
 
         // TODO: This... should probably be replaced? Like fully.
         private void InventorySafekeepController_SafekeepInventory(On.RoR2.InventorySafekeepController.orig_SafekeepInventory orig, InventorySafekeepController self, CharacterMaster master) {
-            PlayerStorage player = FindPlayerStorage(master); // Let's see if we have a player.
-            if (player != null && player.isDead) player.master.teamIndex = TeamIndex.Player; // You're being put back on the player team.
+            if (_config.EnableRefightilization) {
+                PlayerStorage player = FindPlayerStorage(master); // Let's see if we have a player.
+                if (player != null && player.isDead) player.master.teamIndex = TeamIndex.Player; // You're being put back on the player team.
+            }
             orig(self, master);
             // BUG: So. There is a huge edge case that setting the player back will prevent other things that may happen to the player.
             // We are going to assume that if you're keeping items, Players are supposed to be players.
@@ -703,14 +705,14 @@ namespace Wonda
                 player.GetBody().gameObject.AddComponent<InteractionDriver>();
                 Logger.LogDebug("Granting an interaction driver.");
             }
-            Logger.LogDebug("Has interaction driver.");
 
             // Grabbing all of the minions of the player and changing their team.
             ChangeMinionsTeam(player);
 
             // Some fun stuff to allow players to easily get back into combat.
             player.GetBody().AddTimedBuff(RoR2Content.Buffs.Immune, 5f); // We want a brief amount of immunity.
-            player.GetBody().AddUnmanagedBuff(RoR2Content.Buffs.TonicBuff, 1); // Ehehehe. It fits the vibe a bit. 
+            player.GetBody().AddUnmanagedBuff(DLC3Content.Buffs.TrashToTreasureGreen, 2); // This is the only one that grants pure regen? 
+            player.GetBody().AddUnmanagedBuff(DLC4Content.Buffs.Brutal, 2); // Ehehehe. It fits the vibe a bit. 
             Logger.LogDebug("Applied buffs.");
 
             // And Affixes if the player is lucky.
